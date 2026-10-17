@@ -528,8 +528,8 @@ export default function HomePage() {
                         <li><a href="#products" className="nav-link" onClick={() => setMobileMenuOpen(false)}>Products</a></li>
                         <li><a href="#gallery" className="nav-link" onClick={() => setMobileMenuOpen(false)}>Art Gallery</a></li>
                         <li><a href="#testimonials" className="nav-link" onClick={() => setMobileMenuOpen(false)}>Reviews</a></li>
-                        <li><Link href="/checkout" className="nav-link">Checkout</Link></li>
-                        <li><Link href="/admin" className="nav-link" style={{ color: 'var(--gold)' }}>Admin</Link></li>
+                        <li><Link href="/checkout" className="nav-link" onClick={() => setMobileMenuOpen(false)}>Checkout</Link></li>
+                        <li><Link href="/admin" className="nav-link" style={{ color: 'var(--gold)' }} onClick={() => setMobileMenuOpen(false)}>Login</Link></li>
                         <li className="mobile-only">
                             <a href="#contact" className="nav-cta-mobile" onClick={() => setMobileMenuOpen(false)}>
                                 Custom Order
@@ -1325,7 +1325,7 @@ export default function HomePage() {
                         <h4>Navigation & Privileges</h4>
                         <ul>
                             <li><Link href="/checkout">Bespoke Checkout (10% Card Off)</Link></li>
-                            <li><Link href="/admin">Master Artisan Admin</Link></li>
+                            <li><Link href="/admin">Artisan Login</Link></li>
                             <li><a href="#testimonials">Verified Patron Reviews</a></li>
                             <li><a href="https://wa.me/94771234567" target="_blank" rel="noopener noreferrer">WhatsApp Concierge</a></li>
                         </ul>
