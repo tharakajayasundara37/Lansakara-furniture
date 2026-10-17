@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import './admin.css';
 
 export default function AdminPage() {
     // Auth State

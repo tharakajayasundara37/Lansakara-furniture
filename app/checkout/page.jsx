@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import './checkout.css';
 
 const districtDistances = [
     { label: 'Moratuwa / Panadura (Local Workshop Area)', km: 5 },

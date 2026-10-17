@@ -6,98 +6,229 @@ import { useRouter } from 'next/navigation';
 import ChairConfigurator from '@/components/ChairConfigurator';
 
 const heroSlides = [
+    { src: '/images/wood_28.jpg', caption: 'Executive Solid Timber Desk', alt: 'Minimalist Solid Wood Desk' },
+    { src: '/images/wood_22.jpg', caption: 'Curved Minimalist Timber Sofa', alt: 'Organic Wood Living Lounge' },
+    { src: '/images/wood_10.jpg', caption: 'Handcrafted Live Edge Dining Table', alt: 'Handcrafted Live Edge Table' },
+    { src: '/images/wood_12.jpg', caption: 'Exotic Handcrafted Living Suites', alt: 'Luxury Exotic Wood Furniture' },
+    { src: '/images/wood_24.jpg', caption: 'Timeless Natural Teak Architecture', alt: 'Timeless Wooden Craftsmanship' }
+];
+
+const initialProducts = [
     {
-        image: '/images/wood_01.jpg',
-        title: 'Timeless Ceylon Heritage Handcrafted in Solid Timber',
-        subtitle: 'Living grain, mortise-and-tenon heirloom joinery, and bespoke architectural commissions crafted by Moratuwa master artisans.'
+        id: 'prod_001',
+        name: 'Live Edge Dining Table',
+        category: 'dining',
+        img: '/images/wood_09.jpg',
+        badge: 'Exclusive',
+        spec: 'Natural Suar Solid Slab • 8-10 Seater',
+        price: 285000
     },
     {
-        image: '/images/wood_02.jpg',
-        title: 'Sculpted from Aged Ceylon Teak & Rich Red Mahogany',
-        subtitle: 'Each slab is kiln-dried to 8% moisture and finished with botanical organic beeswaxes for a century of living elegance.'
+        id: 'prod_002',
+        name: 'Aurelin Organic Sofa',
+        category: 'living',
+        img: '/images/wood_04.jpg',
+        badge: 'Sculptural',
+        spec: 'Solid Teak Wood Base • 96"W x 24"D x 16"H',
+        price: 340000
     },
     {
-        image: '/images/wood_03.jpg',
-        title: 'Interactive 3D Bespoke Studio & Tailored Commissioning',
-        subtitle: 'Configure your royal dining chairs and architectural suites in real-time 3D with custom timber, fabrics, and 24K gold accents.'
+        id: 'prod_003',
+        name: 'Wabi Sabi Timber Table',
+        category: 'dining',
+        img: '/images/wood_27.jpg',
+        badge: 'Wabi Sabi',
+        spec: 'Deep Walnut Finish • 72"W x 40"D x 30"H',
+        price: 245000
+    },
+    {
+        id: 'prod_004',
+        name: 'Noverra Sculpted Table',
+        category: 'tables',
+        img: '/images/wood_19.jpg',
+        badge: 'Artisan',
+        spec: 'Solid Teak Monolith • 48"W x 24"D x 16"H',
+        price: 165000
+    },
+    {
+        id: 'prod_005',
+        name: 'Solid Wood Artisan Bed',
+        category: 'bedroom',
+        img: '/images/wood_14.jpg',
+        badge: 'Signature',
+        spec: 'Upholstered Linen & Solid Teak • King Size',
+        price: 389000
+    },
+    {
+        id: 'prod_006',
+        name: 'Royal Carved Vanity Table',
+        category: 'bedroom',
+        img: '/images/wood_20.jpg',
+        badge: 'Master Carving',
+        spec: 'Ornate Floral Carvings • Vintage Warm Finish',
+        price: 219000
+    },
+    {
+        id: 'prod_007',
+        name: 'Tharvane Solid Coffee Table',
+        category: 'tables',
+        img: '/images/wood_23.jpg',
+        badge: 'Minimalist',
+        spec: 'Solid Teak Architecture • 30"W x 18"D x 16"H',
+        price: 115000
+    },
+    {
+        id: 'prod_008',
+        name: 'Rustic Timber Log Sofa',
+        category: 'living',
+        img: '/images/wood_05.jpg',
+        badge: 'Rustic',
+        spec: 'Natural Tree Log Construction • Linen Cushions',
+        price: 298000
+    },
+    {
+        id: 'prod_009',
+        name: 'Barnwood Farmhouse Vanity',
+        category: 'bedroom',
+        img: '/images/wood_21.jpg',
+        badge: 'Farmhouse',
+        spec: 'Reclaimed Timber • Stone Basin Ready',
+        price: 179000
     }
 ];
 
 export default function HomePage() {
     const router = useRouter();
 
-    // Hero state
+    // Hero Carousel
     const [heroIndex, setHeroIndex] = useState(0);
 
-    // Products state
-    const [products, setProducts] = useState([]);
-    const [selectedCategory, setSelectedCategory] = useState('all');
-    const [loadingProducts, setLoadingProducts] = useState(true);
+    // Products Filtering & Dynamic Sync
+    const [activeCategory, setActiveCategory] = useState('all');
+    const [adminProducts, setAdminProducts] = useState([]);
 
-    // Reviews state
-    const [reviews, setReviews] = useState([]);
-    const [reviewStats, setReviewStats] = useState({ average: 5.0, total: 3 });
+    // Reviews & Slider
+    const [reviews, setReviews] = useState([
+        {
+            _id: 'default_1',
+            rating: 5,
+            quote: 'The live-edge dining table is the emotional center of our house. Everyone who visits can’t stop tracing their fingers along the smooth organic edge. Truly museum-grade craftsmanship.',
+            authorName: 'Dilshan & Chamari Senanayake',
+            location: 'Architectural Villa, Colombo 07',
+            productPurchased: 'Live Edge Suar Dining Table'
+        }
+    ]);
     const [activeReviewIdx, setActiveReviewIdx] = useState(0);
-    const [hasReviewed, setHasReviewed] = useState(false);
+    const [reviewsScore, setReviewsScore] = useState({ average: 5.0, total: 3 });
 
-    // Review Modal State
+    // Review Modal
     const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
     const [reviewRating, setReviewRating] = useState(5);
-    const [reviewForm, setReviewForm] = useState({
-        name: '',
-        email: '',
-        location: '',
-        product: '',
-        quote: ''
-    });
-    const [reviewAlert, setReviewAlert] = useState({ type: '', message: '' });
+    const [reviewName, setReviewName] = useState('');
+    const [reviewEmail, setReviewEmail] = useState('');
+    const [reviewLocation, setReviewLocation] = useState('');
+    const [reviewProduct, setReviewProduct] = useState('');
+    const [reviewQuote, setReviewQuote] = useState('');
+    const [reviewAlert, setReviewAlert] = useState({ type: '', text: '' });
     const [submittingReview, setSubmittingReview] = useState(false);
+    const [hasReviewed, setHasReviewed] = useState(false);
 
-    // Commission Form State
-    const [commissionForm, setCommissionForm] = useState({
+    // Contact Form
+    const [contactForm, setContactForm] = useState({
         name: '',
-        phone: '',
         email: '',
-        interest: 'Royal Dining Suite',
+        phone: '',
+        productType: '',
         message: ''
     });
-    const [commissionSubmitted, setCommissionSubmitted] = useState(false);
+    const [contactSuccess, setContactSuccess] = useState(false);
 
-    // Hero slider interval
+    // Mobile Menu
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [isScrolled, setIsScrolled] = useState(false);
+
+    // Cursor coordinates
+    const [mousePos, setMousePos] = useState({ x: -100, y: -100 });
+    const [ringPos, setRingPos] = useState({ x: -100, y: -100 });
+
+    // ─── EFFECTS ──────────────────────────────────────────
+
+    // Custom Cursor tracking
+    useEffect(() => {
+        const handleMouseMove = (e) => {
+            setMousePos({ x: e.clientX, y: e.clientY });
+        };
+        window.addEventListener('mousemove', handleMouseMove);
+
+        let animationFrameId;
+        const animateRing = () => {
+            setRingPos((prev) => ({
+                x: prev.x + (mousePos.x - prev.x) * 0.15,
+                y: prev.y + (mousePos.y - prev.y) * 0.15
+            }));
+            animationFrameId = requestAnimationFrame(animateRing);
+        };
+        animationFrameId = requestAnimationFrame(animateRing);
+
+        return () => {
+            window.removeEventListener('mousemove', handleMouseMove);
+            cancelAnimationFrame(animationFrameId);
+        };
+    }, [mousePos.x, mousePos.y]);
+
+    // Navbar scroll & back to top
+    useEffect(() => {
+        const handleScroll = () => {
+            setIsScrolled(window.scrollY > 60);
+            const btt = document.getElementById('backToTop');
+            if (btt) {
+                if (window.scrollY > 400) {
+                    btt.classList.add('visible');
+                } else {
+                    btt.classList.remove('visible');
+                }
+            }
+        };
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
+    // Hero Carousel Timer
     useEffect(() => {
         const timer = setInterval(() => {
             setHeroIndex((prev) => (prev + 1) % heroSlides.length);
-        }, 7000);
+        }, 10000);
         return () => clearInterval(timer);
     }, []);
 
     // Check localStorage for prior review
     useEffect(() => {
         if (typeof window !== 'undefined') {
-            const reviewed = localStorage.getItem('lansakara_reviewed_email');
-            if (reviewed) setHasReviewed(true);
+            const saved = localStorage.getItem('lansakara_reviewed_email');
+            if (saved) setHasReviewed(true);
         }
     }, []);
 
-    // Fetch Products
+    // Load dynamic products from backend
     useEffect(() => {
         async function fetchProducts() {
             try {
                 const res = await fetch('/api/products?limit=200');
                 if (res.ok) {
                     const data = await res.json();
-                    setProducts(data.products || []);
+                    const allProds = data.products || [];
+                    const initialIds = new Set(['prod_001', 'prod_002', 'prod_003', 'prod_004', 'prod_005', 'prod_006', 'prod_007', 'prod_008', 'prod_009']);
+                    const newlyAdded = allProds.filter((p) => !initialIds.has(p._id));
+                    setAdminProducts(newlyAdded);
                 }
-            } catch (err) {
-                console.error('Failed to load products:', err);
-            } finally {
-                setLoadingProducts(false);
+            } catch (e) {
+                console.warn('Could not load dynamic products:', e);
             }
         }
         fetchProducts();
     }, []);
 
-    // Fetch Reviews
+    // Load public reviews from backend
     useEffect(() => {
         async function fetchReviews() {
             try {
@@ -105,20 +236,22 @@ export default function HomePage() {
                 if (res.ok) {
                     const data = await res.json();
                     const list = data.reviews || [];
-                    setReviews(list);
-                    setReviewStats({
-                        average: data.averageRating || 5.0,
-                        total: data.total || list.length
-                    });
+                    if (list.length > 0) {
+                        setReviews(list);
+                        setReviewsScore({
+                            average: data.averageRating || 5.0,
+                            total: data.total || list.length
+                        });
+                    }
                 }
-            } catch (err) {
-                console.error('Failed to load reviews:', err);
+            } catch (e) {
+                console.warn('Could not load reviews:', e);
             }
         }
         fetchReviews();
     }, []);
 
-    // Reviews auto-slide
+    // Testimonials auto-slide
     useEffect(() => {
         if (reviews.length <= 1) return;
         const timer = setInterval(() => {
@@ -127,7 +260,132 @@ export default function HomePage() {
         return () => clearInterval(timer);
     }, [reviews.length]);
 
-    // Handle Category Filter
+    // ─── ACTIONS ──────────────────────────────────────────
+
+    const nextHeroSlide = () => setHeroIndex((prev) => (prev + 1) % heroSlides.length);
+    const prevHeroSlide = () => setHeroIndex((prev) => (prev - 1 + heroSlides.length) % heroSlides.length);
+    const setHeroSlide = (idx) => setHeroIndex(idx);
+
+    const filterCategory = (cat) => {
+        setActiveCategory(cat);
+    };
+
+    const inquireProduct = (productName, price, img) => {
+        let prodPrice = price;
+        let prodImg = img;
+
+        const matchInitial = initialProducts.find((p) => p.name === productName);
+        if (matchInitial) {
+            prodPrice = matchInitial.price;
+            prodImg = matchInitial.img;
+        }
+
+        const matchAdmin = adminProducts.find((p) => p.name === productName);
+        if (matchAdmin) {
+            prodPrice = matchAdmin.price;
+            prodImg = matchAdmin.images && matchAdmin.images[0] ? matchAdmin.images[0] : '/images/wood_09.jpg';
+        }
+
+        const orderDraft = {
+            name: productName,
+            price: prodPrice || 250000,
+            image: prodImg || '/images/wood_09.jpg',
+            specs: 'Solid Timber Handcrafted Masterpiece'
+        };
+
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('lansakara_checkout_order', JSON.stringify(orderDraft));
+        }
+        router.push(`/checkout?product=${encodeURIComponent(productName)}&price=${prodPrice || 250000}`);
+    };
+
+    const openReviewModal = () => {
+        if (typeof window !== 'undefined') {
+            const email = localStorage.getItem('lansakara_reviewed_email');
+            if (email) {
+                alert(`You have already submitted an authentic review for Lansakara Furniture (${email}). Each customer is permitted one review. Thank you for your wonderful patronage!`);
+                return;
+            }
+        }
+        setReviewAlert({ type: '', text: '' });
+        setIsReviewModalOpen(true);
+    };
+
+    const closeReviewModal = () => {
+        setIsReviewModalOpen(false);
+    };
+
+    const handleReviewSubmit = async (e) => {
+        e.preventDefault();
+        setReviewAlert({ type: '', text: '' });
+        setSubmittingReview(true);
+
+        const email = reviewEmail.trim().toLowerCase();
+
+        try {
+            const checkRes = await fetch(`/api/reviews/check?email=${encodeURIComponent(email)}`);
+            const checkData = await checkRes.json();
+            if (checkData.hasReviewed || checkData.alreadyReviewed) {
+                setReviewAlert({
+                    type: 'error',
+                    text: `An authentic review has already been submitted with this email (${email}). Each customer is permitted only one review.`
+                });
+                setSubmittingReview(false);
+                return;
+            }
+
+            const res = await fetch('/api/reviews', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    authorName: reviewName.trim(),
+                    authorEmail: email,
+                    location: reviewLocation.trim() || 'Sri Lanka',
+                    productPurchased: reviewProduct.trim() || 'Bespoke Timber Piece',
+                    rating: reviewRating,
+                    quote: reviewQuote.trim()
+                })
+            });
+
+            const data = await res.json();
+            if (!res.ok) {
+                setReviewAlert({ type: 'error', text: data.error || 'Failed to submit review' });
+                setSubmittingReview(false);
+                return;
+            }
+
+            if (typeof window !== 'undefined') {
+                localStorage.setItem('lansakara_reviewed_email', email);
+            }
+            setHasReviewed(true);
+            setReviewAlert({
+                type: 'success',
+                text: '✓ Thank you! Your authentic review has been recorded. It will appear on our homepage.'
+            });
+
+            setTimeout(() => {
+                closeReviewModal();
+                setReviewName('');
+                setReviewEmail('');
+                setReviewLocation('');
+                setReviewProduct('');
+                setReviewQuote('');
+                setReviewRating(5);
+                setSubmittingReview(false);
+            }, 2200);
+        } catch (err) {
+            setReviewAlert({ type: 'error', text: 'Network connection issue. Please try again.' });
+            setSubmittingReview(false);
+        }
+    };
+
+    const handleFormSubmit = (e) => {
+        e.preventDefault();
+        const text = `Hello Lansakara Artisans,%0A%0AI would like to commission a bespoke piece:%0A- Name: ${encodeURIComponent(contactForm.name)}%0A- Email: ${encodeURIComponent(contactForm.email)}%0A- Phone: ${encodeURIComponent(contactForm.phone)}%0A- Furniture Type: ${encodeURIComponent(contactForm.productType)}%0A- Notes: ${encodeURIComponent(contactForm.message)}`;
+        window.open(`https://wa.me/94771234567?text=${text}`, '_blank');
+        setContactSuccess(true);
+    };
+
     const getFilterCat = (cat, name) => {
         const c = (cat || '').toLowerCase();
         const n = (name || '').toLowerCase();
@@ -138,454 +396,560 @@ export default function HomePage() {
         return 'dining';
     };
 
-    const filteredProducts = products.filter((p) => {
-        if (selectedCategory === 'all') return true;
-        const cat = getFilterCat(p.category, p.name);
-        return cat === selectedCategory;
-    });
-
-    // Handle Order Bespoke Navigation
-    const handleOrderProduct = (prod) => {
-        const orderDraft = {
-            name: prod.name,
-            price: prod.price || 250000,
-            image: prod.images && prod.images[0] ? prod.images[0] : '/images/wood_09.jpg',
-            specs: prod.shortDescription || prod.woodType || 'Solid Timber Handcrafted Masterpiece'
-        };
-        if (typeof window !== 'undefined') {
-            localStorage.setItem('lansakara_checkout_order', JSON.stringify(orderDraft));
-        }
-        router.push(`/checkout?product=${encodeURIComponent(prod.name)}&price=${prod.price}`);
-    };
-
-    // Open Review Modal
-    const handleOpenReviewModal = () => {
-        if (typeof window !== 'undefined') {
-            const email = localStorage.getItem('lansakara_reviewed_email');
-            if (email) {
-                alert(`You have already shared a verified patron review (${email}). Each patron is permitted one review. Thank you for your patronage!`);
-                return;
-            }
-        }
-        setReviewAlert({ type: '', message: '' });
-        setIsReviewModalOpen(true);
-    };
-
-    // Submit Review
-    const handleSubmitReview = async (e) => {
-        e.preventDefault();
-        setReviewAlert({ type: '', message: '' });
-        setSubmittingReview(true);
-
-        const email = reviewForm.email.trim().toLowerCase();
-
-        try {
-            // First check if email has already submitted
-            const checkRes = await fetch(`/api/reviews/check?email=${encodeURIComponent(email)}`);
-            const checkData = await checkRes.json();
-            if (checkData.hasReviewed) {
-                setReviewAlert({
-                    type: 'error',
-                    message: `An authentic review has already been registered for ${email}. Each customer is permitted one review.`
-                });
-                setSubmittingReview(false);
-                return;
-            }
-
-            // Submit
-            const res = await fetch('/api/reviews', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    authorName: reviewForm.name.trim(),
-                    authorEmail: email,
-                    location: reviewForm.location.trim() || 'Sri Lanka',
-                    productPurchased: reviewForm.product.trim() || 'Bespoke Timber Commission',
-                    rating: reviewRating,
-                    quote: reviewForm.quote.trim()
-                })
-            });
-
-            const data = await res.json();
-            if (!res.ok) {
-                setReviewAlert({ type: 'error', message: data.error || 'Failed to submit review' });
-                setSubmittingReview(false);
-                return;
-            }
-
-            // Success
-            localStorage.setItem('lansakara_reviewed_email', email);
-            setHasReviewed(true);
-            setReviewAlert({
-                type: 'success',
-                message: 'Thank you! Your verified patron review has been recorded and will appear after moderation.'
-            });
-
-            setTimeout(() => {
-                setIsReviewModalOpen(false);
-                setReviewForm({ name: '', email: '', location: '', product: '', quote: '' });
-                setSubmittingReview(false);
-            }, 2000);
-        } catch (err) {
-            setReviewAlert({ type: 'error', message: 'Network error. Please try again.' });
-            setSubmittingReview(false);
-        }
-    };
-
-    // Handle Commission Form Submit
-    const handleCommissionSubmit = (e) => {
-        e.preventDefault();
-        const msg = `Hello Lansakara Artisans, I would like to commission a bespoke piece:%0A%0AName: ${encodeURIComponent(commissionForm.name)}%0APhone: ${encodeURIComponent(commissionForm.phone)}%0AInterest: ${encodeURIComponent(commissionForm.interest)}%0ANotes: ${encodeURIComponent(commissionForm.message)}`;
-        window.open(`https://wa.me/94771234567?text=${msg}`, '_blank');
-        setCommissionSubmitted(true);
-    };
-
-    const ratingDescriptions = {
-        1: '1 Star — Needs Improvement',
-        2: '2 Stars — Acceptable',
-        3: '3 Stars — Good Craftsmanship',
-        4: '4 Stars — Highly Impressed',
-        5: '5 Stars — Exceptional Masterpiece'
-    };
+    const roundedStars = Math.round(reviewsScore.average);
+    const starStr = '★'.repeat(roundedStars) + '☆'.repeat(5 - roundedStars);
 
     return (
-        <div className="page-wrapper">
-            {/* ═══════════════ NAVIGATION HEADER ═══════════════ */}
-            <header className="navbar" id="navbar">
-                <div className="nav-container">
-                    <Link href="/" className="nav-logo">
-                        <span className="logo-text">LANSAKARA</span>
-                        <span className="logo-tagline">ROYAL CEYLON WOODCRAFT</span>
-                    </Link>
+        <div>
+            {/* Custom Cursor */}
+            <div
+                className="cursor-dot"
+                id="cursorDot"
+                style={{ left: `${mousePos.x}px`, top: `${mousePos.y}px` }}
+            ></div>
+            <div
+                className="cursor-ring"
+                id="cursorRing"
+                style={{ left: `${ringPos.x}px`, top: `${ringPos.y}px` }}
+            ></div>
 
-                    <nav className="nav-links">
-                        <a href="#heritage" className="nav-link">Heritage</a>
-                        <a href="#products" className="nav-link">Collections</a>
-                        <a href="#3d-chair" className="nav-link">3D Studio</a>
-                        <a href="#reviews" className="nav-link">Reflections</a>
-                        <a href="#contact" className="nav-link">Commission</a>
-                        <Link href="/admin" className="nav-link admin-pill">
-                            <i className="fas fa-lock"></i> Admin
-                        </Link>
-                    </nav>
-
+            {/* Top Navigation */}
+            <nav className={`navbar ${isScrolled ? 'scrolled' : ''}`} id="navbar">
+                <div className="navbar-container">
+                    <a href="#home" className="nav-logo">
+                        <span className="logo-icon">⚜</span>
+                        Lansakara <span>Furniture</span>
+                    </a>
+                    <ul className={`nav-links ${mobileMenuOpen ? 'open' : ''}`} id="navLinks">
+                        <li><a href="#home" className="nav-link" onClick={() => setMobileMenuOpen(false)}>Home</a></li>
+                        <li><a href="#about" className="nav-link" onClick={() => setMobileMenuOpen(false)}>Story</a></li>
+                        <li><a href="#3d-chair" className="nav-link nav-highlight" onClick={() => setMobileMenuOpen(false)}>🪑 3D Studio</a></li>
+                        <li><a href="#products" className="nav-link" onClick={() => setMobileMenuOpen(false)}>Products</a></li>
+                        <li><a href="#gallery" className="nav-link" onClick={() => setMobileMenuOpen(false)}>Art Gallery</a></li>
+                        <li><a href="#testimonials" className="nav-link" onClick={() => setMobileMenuOpen(false)}>Reviews</a></li>
+                        <li><Link href="/checkout" className="nav-link">Checkout</Link></li>
+                        <li><Link href="/admin" className="nav-link" style={{ color: 'var(--gold)' }}>Admin</Link></li>
+                        <li className="mobile-only">
+                            <a href="#contact" className="nav-cta-mobile" onClick={() => setMobileMenuOpen(false)}>
+                                Custom Order
+                            </a>
+                        </li>
+                    </ul>
                     <div className="nav-actions">
-                        <a
-                            href="https://wa.me/94771234567?text=Hello%20Lansakara%20Artisans,%20I%20am%20in的双quired%20about%20a%20bespoke%20timber%20commission."
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="btn-consultation"
+                        <a href="#contact" className="nav-cta-btn">Custom Order</a>
+                        <button
+                            className="menu-toggle"
+                            id="menuToggle"
+                            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                            aria-label="Toggle navigation"
                         >
-                            <i className="fab fa-whatsapp"></i> Artisan Concierge
-                        </a>
+                            <span></span><span></span><span></span>
+                        </button>
                     </div>
                 </div>
-            </header>
+            </nav>
 
-            {/* ═══════════════ HERO BANNER ═══════════════ */}
+            {/* Hero Section (Crisp 10-Second Carousel, HD Non-Blur) */}
             <section className="hero" id="home">
-                {heroSlides.map((slide, idx) => (
-                    <div
-                        key={idx}
-                        className={`hero-slide ${idx === heroIndex ? 'active' : ''}`}
-                        style={{ backgroundImage: `url(${slide.image})` }}
-                    >
-                        <div className="hero-overlay"></div>
-                    </div>
-                ))}
+                <div className="hero-slides-wrapper" id="heroSlidesWrapper">
+                    {heroSlides.map((slide, idx) => (
+                        <div
+                            key={idx}
+                            className={`hero-slide ${idx === heroIndex ? 'active' : ''}`}
+                            data-caption={slide.caption}
+                        >
+                            <img
+                                src={slide.src}
+                                alt={slide.alt}
+                                loading={idx === 0 ? 'eager' : 'lazy'}
+                            />
+                        </div>
+                    ))}
+                </div>
+
+                <div className="hero-scrim"></div>
+                <div className="hero-vignette"></div>
+                <div className="hero-particles" id="heroParticles"></div>
 
                 <div className="hero-content">
-                    <div className="hero-badge">
-                        <span>⚜</span> 100% Solid Ceylon Teak, Mahogany & Walnut
-                    </div>
-                    <h1 className="hero-title">{heroSlides[heroIndex].title}</h1>
-                    <p className="hero-subtitle">{heroSlides[heroIndex].subtitle}</p>
-
-                    <div className="hero-cta-group">
+                    <div className="hero-badge">Master Woodworkers & Artisans</div>
+                    <h1 className="hero-title">
+                        Crafted by Nature,<br />
+                        <span className="accent">Perfected by Hand</span>
+                    </h1>
+                    <p className="hero-subtitle">
+                        Transforming centuries-old reclaimed teak, mahogany, and live-edge timbers into heirloom furniture pieces designed for timeless luxury.
+                    </p>
+                    <div className="hero-buttons">
                         <a href="#products" className="btn-primary">
-                            <span>⚜</span> Explore Masterworks
+                            <span>Explore Masterpieces</span>
                         </a>
-                        <a href="#3d-chair" className="btn-secondary">
-                            <span>✦</span> Open 3D Bespoke Studio
-                        </a>
-                    </div>
-
-                    <div className="hero-features-bar">
-                        <div className="hero-feat-item">
-                            <i className="fas fa-truck"></i>
-                            <div>
-                                <strong>Islandwide Delivery</strong>
-                                <span>Rs. 100 per km white-glove transport</span>
-                            </div>
-                        </div>
-                        <div className="hero-feat-item">
-                            <i className="fas fa-percentage"></i>
-                            <div>
-                                <strong>10% Card Discount</strong>
-                                <span>Instant privilege on online cards</span>
-                            </div>
-                        </div>
-                        <div className="hero-feat-item">
-                            <i className="fas fa-shield-alt"></i>
-                            <div>
-                                <strong>Generational Warranty</strong>
-                                <span>Lifetime structural guarantee</span>
-                            </div>
-                        </div>
+                        <a href="#gallery" className="btn-outline">View Art Gallery</a>
                     </div>
                 </div>
 
-                {/* Hero Slide Controls */}
-                <div className="hero-controls">
-                    <button
-                        className="hero-arrow"
-                        onClick={() => setHeroIndex((prev) => (prev - 1 + heroSlides.length) % heroSlides.length)}
-                    >
-                        ❮
-                    </button>
-                    <div className="hero-dots">
+                {/* Animated Scroll Indicator */}
+                <div
+                    className="scroll-indicator"
+                    onClick={() => {
+                        const el = document.getElementById('about');
+                        if (el) el.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                >
+                    <span>Scroll</span>
+                    <div className="scroll-line"></div>
+                </div>
+
+                {/* 10-Second Countdown Carousel Navigation */}
+                <div className="hero-carousel-nav">
+                    <button className="hero-slide-btn" onClick={prevHeroSlide} title="Previous Slide">‹</button>
+                    <div className="hero-progress-bars" id="heroProgressBars">
                         {heroSlides.map((_, i) => (
                             <div
                                 key={i}
-                                className={`hero-dot ${i === heroIndex ? 'active' : ''}`}
-                                onClick={() => setHeroIndex(i)}
-                            ></div>
+                                className={`hero-progress-pill ${i === heroIndex ? 'active' : ''}`}
+                                onClick={() => setHeroSlide(i)}
+                            >
+                                <div className="hero-progress-fill"></div>
+                            </div>
                         ))}
                     </div>
-                    <button
-                        className="hero-arrow"
-                        onClick={() => setHeroIndex((prev) => (prev + 1) % heroSlides.length)}
-                    >
-                        ❯
-                    </button>
+                    <button className="hero-slide-btn" onClick={nextHeroSlide} title="Next Slide">›</button>
+                    <div className="hero-caption-pill" id="heroCaptionPill">
+                        {heroSlides[heroIndex].caption}
+                    </div>
                 </div>
             </section>
 
-            {/* ═══════════════ HERITAGE SECTION ═══════════════ */}
-            <section className="section heritage" id="heritage">
-                <div className="section-container">
-                    <div className="heritage-grid">
-                        <div className="heritage-text">
-                            <span className="section-label">Since 1974</span>
-                            <h2 className="section-title">
-                                Five Decades of <br />
-                                <em>Ceylon Timber Mastery</em>
-                            </h2>
-                            <p className="body-lead">
-                                Rooted in the legendary woodcraft quarter of Moratuwa, Lansakara creates hand-chiseled furniture that bridges ancestral royal Ceylon techniques with modern architectural residences.
-                            </p>
-                            <p>
-                                We work exclusively with mature timber harvested under sustainable forestry charters—Ceylon Golden Teak, deep Red Mahogany, and Mara—allowing each piece to breathe, mature, and acquire a rich natural patina across generations.
-                            </p>
-
-                            <div className="heritage-stats">
-                                <div className="stat-block">
-                                    <span className="stat-number">50+</span>
-                                    <span className="stat-label">Years of Craft</span>
-                                </div>
-                                <div className="stat-block">
-                                    <span className="stat-number">100%</span>
-                                    <span className="stat-label">Solid Hardwood</span>
-                                </div>
-                                <div className="stat-block">
-                                    <span className="stat-number">3,800+</span>
-                                    <span className="stat-label">Homes Graced</span>
-                                </div>
-                            </div>
+            {/* About Section with Collage */}
+            <section className="section about" id="about">
+                <div className="about-grid">
+                    <div className="about-collage reveal-left active">
+                        <div className="about-collage-img tall">
+                            <img src="/images/wood_15.jpg" alt="Modern Wooden Wall Panel Architecture" />
                         </div>
+                        <div className="about-collage-img short">
+                            <img src="/images/wood_07.jpg" alt="Intricate Carved Wooden Coffee Table" />
+                        </div>
+                        <div className="about-collage-img short">
+                            <img src="/images/wood_11.jpg" alt="Live Edge Coffee Table" />
+                        </div>
+                        <div className="about-badge-floating">
+                            <div className="number">28+</div>
+                            <div className="label">Years of Mastery</div>
+                        </div>
+                    </div>
 
-                        <div className="heritage-image-stack">
-                            <div className="img-frame frame-main">
-                                <img src="/images/wood_02.jpg" alt="Artisan hand plane woodcraft" />
+                    <div className="about-text reveal-right active">
+                        <div className="section-label">Heritage & Mastery</div>
+                        <h3>The Living Art of <span style={{ color: 'var(--wood-amber)', fontStyle: 'italic' }}>Bespoke Woodworking</span></h3>
+                        <p>
+                            Every slab of wood possesses an innate story etched through decades of grain, moisture, and sunlight. At Lansakara, we do not simply cut wood — we listen to its character, respecting natural curves, knots, and live edges.
+                        </p>
+                        <p>
+                            From organic flow sofas and sculptured dining tables to intricate hand-carved coffee tables, our master craftsmen combine ancestral joinery with contemporary wabi-sabi aesthetics.
+                        </p>
+
+                        <div className="about-highlights">
+                            <div className="highlight-item">
+                                <strong>100% Solid Hardwoods</strong>
+                                <span>Teak, Mahogany, Walnut & Cedar</span>
                             </div>
-                            <div className="img-frame frame-sub">
-                                <img src="/images/wood_03.jpg" alt="Mortise and tenon joinery detail" />
+                            <div className="highlight-item">
+                                <strong>Artisan Joinery</strong>
+                                <span>Traditional Mortise & Tenon joints</span>
+                            </div>
+                            <div className="highlight-item">
+                                <strong>Non-Toxic Oils</strong>
+                                <span>Natural organic beeswaxes & eco finishes</span>
+                            </div>
+                            <div className="highlight-item">
+                                <strong>Custom Commission</strong>
+                                <span>Tailored to your architectural spaces</span>
                             </div>
                         </div>
                     </div>
                 </div>
             </section>
 
-            {/* ═══════════════ 3D CHAIR CONFIGURATOR STUDIO ═══════════════ */}
+            {/* Real-Time Interactive Three.js 3D Bespoke Chair Configurator */}
             <ChairConfigurator />
 
-            {/* ═══════════════ PRODUCT CATALOG ═══════════════ */}
-            <section className="section products-section" id="products">
-                <div className="section-container">
-                    <div className="section-header reveal active">
-                        <span className="section-label">Handcrafted Collection</span>
-                        <h2 className="section-title">Heirloom Timber Suites</h2>
-                        <p className="section-desc">
-                            Each masterwork is individually sculpted by our resident artisans. Select any item to order with custom dimensions, wood finishes, and white-glove transport.
-                        </p>
+            {/* Products Section (Filterable Showcase) */}
+            <section className="section products" id="products">
+                <div className="section-header reveal active">
+                    <div className="section-label">Signature Creations</div>
+                    <h2 className="section-title">Handcrafted Wood Collection</h2>
+                    <p className="section-desc">
+                        Select pieces handcrafted from sustainably harvested timbers, finished with botanical oils that highlight natural grains.
+                    </p>
+                </div>
 
-                        <div className="filter-bar">
-                            {[
-                                { key: 'all', label: 'All Pieces' },
-                                { key: 'dining', label: 'Dining & Chairs' },
-                                { key: 'living', label: 'Living & Lounges' },
-                                { key: 'tables', label: 'Coffee & Tables' },
-                                { key: 'bedroom', label: 'Bedrooms' }
-                            ].map((f) => (
-                                <button
-                                    key={f.key}
-                                    className={`filter-btn ${selectedCategory === f.key ? 'active' : ''}`}
-                                    onClick={() => setSelectedCategory(f.key)}
-                                >
-                                    {f.label}
-                                </button>
+                <div className="products-filter reveal active">
+                    <button
+                        className={`filter-btn ${activeCategory === 'all' ? 'active' : ''}`}
+                        onClick={() => filterCategory('all')}
+                    >
+                        All Masterpieces
+                    </button>
+                    <button
+                        className={`filter-btn ${activeCategory === 'dining' ? 'active' : ''}`}
+                        onClick={() => filterCategory('dining')}
+                    >
+                        Dining & Desks
+                    </button>
+                    <button
+                        className={`filter-btn ${activeCategory === 'living' ? 'active' : ''}`}
+                        onClick={() => filterCategory('living')}
+                    >
+                        Living & Sofas
+                    </button>
+                    <button
+                        className={`filter-btn ${activeCategory === 'tables' ? 'active' : ''}`}
+                        onClick={() => filterCategory('tables')}
+                    >
+                        Coffee Tables
+                    </button>
+                    <button
+                        className={`filter-btn ${activeCategory === 'bedroom' ? 'active' : ''}`}
+                        onClick={() => filterCategory('bedroom')}
+                    >
+                        Bed & Vanity
+                    </button>
+                </div>
+
+                <div className="products-grid" id="productsGrid">
+                    {/* Render Initial Catalog Products */}
+                    {initialProducts.map((p) => {
+                        const show = activeCategory === 'all' || p.category === activeCategory;
+                        if (!show) return null;
+                        return (
+                            <div key={p.id} className="product-card reveal active" data-category={p.category}>
+                                <div className="product-thumb">
+                                    <img src={p.img} alt={p.name} />
+                                    {p.badge && <div className="product-badge-tag">{p.badge}</div>}
+                                    <div className="product-overlay-action">
+                                        <button
+                                            className="product-quick-btn"
+                                            onClick={() => inquireProduct(p.name, p.price, p.img)}
+                                        >
+                                            Order Bespoke
+                                        </button>
+                                    </div>
+                                </div>
+                                <div className="product-details">
+                                    <span className="product-category">
+                                        {p.category.toUpperCase()}
+                                    </span>
+                                    <h3 className="product-title">{p.name}</h3>
+                                    <p className="product-spec">{p.spec}</p>
+                                    <div className="product-footer">
+                                        <span className="product-price">Rs. {p.price.toLocaleString()}</span>
+                                        <button
+                                            className="product-inquire"
+                                            onClick={() => inquireProduct(p.name, p.price, p.img)}
+                                        >
+                                            Inquire →
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })}
+
+                    {/* Render Dynamic Admin Added Products */}
+                    {adminProducts.map((p) => {
+                        const cat = getFilterCat(p.category, p.name);
+                        const show = activeCategory === 'all' || cat === activeCategory;
+                        if (!show) return null;
+                        const img = p.images && p.images[0] ? p.images[0] : '/images/wood_09.jpg';
+                        const specText = p.shortDescription || p.woodType || p.dimensions || p.category || 'Handcrafted Solid Timber';
+                        const priceNum = p.price || 0;
+                        return (
+                            <div key={p._id} className="product-card reveal active" data-category={cat}>
+                                <div className="product-thumb">
+                                    <img
+                                        src={img}
+                                        alt={p.name}
+                                        onError={(e) => { e.currentTarget.src = '/images/wood_09.jpg'; }}
+                                    />
+                                    {p.badge && <div className="product-badge-tag">{p.badge}</div>}
+                                    <div className="product-overlay-action">
+                                        <button
+                                            className="product-quick-btn"
+                                            onClick={() => inquireProduct(p.name, priceNum, img)}
+                                        >
+                                            Order Bespoke
+                                        </button>
+                                    </div>
+                                </div>
+                                <div className="product-details">
+                                    <span className="product-category">
+                                        {(p.category || 'Handcrafted').toUpperCase()}
+                                    </span>
+                                    <h3 className="product-title">{p.name}</h3>
+                                    <p className="product-spec">{specText}</p>
+                                    <div className="product-footer">
+                                        <span className="product-price">Rs. {priceNum.toLocaleString()}</span>
+                                        <button
+                                            className="product-inquire"
+                                            onClick={() => inquireProduct(p.name, priceNum, img)}
+                                        >
+                                            Inquire →
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            </section>
+
+            {/* Parallax Craft Banner */}
+            <section className="craft-banner">
+                <div className="craft-banner-bg">
+                    <img src="/images/wood_24.jpg" alt="Craftsmanship Texture" />
+                </div>
+                <div className="craft-banner-content reveal active">
+                    <div className="section-label" style={{ color: 'var(--gold)' }}>Uncompromising Passion</div>
+                    <h2>Every Piece Tells a Century-Old Tale</h2>
+                    <p>
+                        From sustainable forestry to slow natural seasoning, our wood matures gracefully over decades so your furniture remains a treasured family heirloom for generations.
+                    </p>
+                    <a href="#contact" className="btn-primary">Commission a Custom Work</a>
+                </div>
+            </section>
+
+            {/* Masonry Art Gallery (Artwork & Details) */}
+            <section className="section gallery" id="gallery">
+                <div className="section-header reveal active">
+                    <div className="section-label">Visual Inspiration</div>
+                    <h2 className="section-title">The Artistry of Grain & Form</h2>
+                    <p className="section-desc">
+                        An artistic retrospective of our custom installations, live edge coffee tables, and contemporary wood sculptures.
+                    </p>
+                </div>
+
+                <div className="masonry-grid">
+                    <div className="masonry-item w-2 h-2 reveal active">
+                        <img src="/images/wood_06.jpg" alt="Organic Table Creations" />
+                        <div className="masonry-overlay">
+                            <h4>Organic Table Creations</h4>
+                            <p>Fluid Form live edge sculptures</p>
+                        </div>
+                    </div>
+                    <div className="masonry-item h-2 reveal active">
+                        <img src="/images/wood_02.jpg" alt="Sculpted Monolith Bench" />
+                        <div className="masonry-overlay">
+                            <h4>Monolithic Timber Bench</h4>
+                            <p>Hand-carved organic contours</p>
+                        </div>
+                    </div>
+                    <div className="masonry-item reveal active">
+                        <img src="/images/wood_16.jpg" alt="Live Edge Rustic Centerpiece" />
+                        <div className="masonry-overlay">
+                            <h4>Reclaimed Centerpiece</h4>
+                            <p>Farmhouse natural wood art</p>
+                        </div>
+                    </div>
+                    <div className="masonry-item reveal active">
+                        <img src="/images/wood_08.jpg" alt="Elvarenne Black Solid Wood Table" />
+                        <div className="masonry-overlay">
+                            <h4>Elvarenne Charcoal Table</h4>
+                            <p>Sumi-e inspired finish</p>
+                        </div>
+                    </div>
+                    <div className="masonry-item w-2 reveal active">
+                        <img src="/images/wood_26.jpg" alt="Timeless Honest Materials" />
+                        <div className="masonry-overlay">
+                            <h4>Honest Raw Materials</h4>
+                            <p>Subtle grain textures and oil finish</p>
+                        </div>
+                    </div>
+                    <div className="masonry-item reveal active">
+                        <img src="/images/wood_18.jpg" alt="Rustic Eco Tables" />
+                        <div className="masonry-overlay">
+                            <h4>Eco-Friendly Rustic</h4>
+                            <p>Sustainably reclaimed timber</p>
+                        </div>
+                    </div>
+                    <div className="masonry-item reveal active">
+                        <img src="/images/wood_29.jpg" alt="Decor Stand Pedestal" />
+                        <div className="masonry-overlay">
+                            <h4>Minimalist Timber Pedestal</h4>
+                            <p>Geometric live edge sculpture</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* Why Us & Features */}
+            <section className="section features" id="features">
+                <div className="section-header reveal active">
+                    <div className="section-label">The Lansakara Standard</div>
+                    <h2 className="section-title">Why Connoisseurs Choose Us</h2>
+                    <p className="section-desc">
+                        We believe true luxury is built slowly with honest materials, master craftsmanship, and timeless design.
+                    </p>
+                </div>
+
+                <div className="features-grid">
+                    <div className="feature-card reveal active">
+                        <div className="feature-icon">🌳</div>
+                        <h4>Sustainably Sourced</h4>
+                        <p>Only aged, reclaimed, or certified timber from responsibly managed forests.</p>
+                    </div>
+                    <div className="feature-card reveal active">
+                        <div className="feature-icon">📐</div>
+                        <h4>Bespoke Tailoring</h4>
+                        <p>Every dimension, edge profile, and wood tone tailored precisely to your floor plan.</p>
+                    </div>
+                    <div className="feature-card reveal active">
+                        <div className="feature-icon">🛡️</div>
+                        <h4>Lifetime Guarantee</h4>
+                        <p>Heirloom-grade craftsmanship backed by our multigenerational warranty.</p>
+                    </div>
+                    <div className="feature-card reveal active">
+                        <div className="feature-icon">🚚</div>
+                        <h4>White Glove Delivery</h4>
+                        <p>Direct doorstep placement and installation by our experienced in-house crew.</p>
+                    </div>
+                </div>
+            </section>
+
+            {/* Stats */}
+            <section className="stats">
+                <div className="stats-grid">
+                    <div className="stat-item reveal active">
+                        <div className="stat-number">3,200+</div>
+                        <div className="stat-label">Bespoke Works Crafted</div>
+                    </div>
+                    <div className="stat-item reveal active">
+                        <div className="stat-number">28+</div>
+                        <div className="stat-label">Years of Heritage</div>
+                    </div>
+                    <div className="stat-item reveal active">
+                        <div className="stat-number">100%</div>
+                        <div className="stat-label">Solid Hardwood</div>
+                    </div>
+                    <div className="stat-item reveal active">
+                        <div className="stat-number">24+</div>
+                        <div className="stat-label">Design Accolades</div>
+                    </div>
+                </div>
+            </section>
+
+            {/* Testimonials Slider & Patron Reviews */}
+            <section className="section testimonials" id="testimonials">
+                <div className="section-header reveal active">
+                    <div className="section-label">Patron Reflections</div>
+                    <h2 className="section-title">Treasured in Every Home</h2>
+                    <div className="reviews-summary-bar" id="reviewsSummaryBar">
+                        <div className="reviews-score-pill">
+                            <span className="gold-stars" id="headerGoldStars">{starStr}</span>
+                            <span id="headerRatingText">{reviewsScore.average.toFixed(1)} / 5.0 Rating</span>
+                            <span style={{ color: 'var(--text-light)', fontWeight: 400 }} id="headerReviewsCount">
+                                · {reviewsScore.total} Verified Patrons
+                            </span>
+                        </div>
+                        <button
+                            className={`btn-write-review ${hasReviewed ? 'submitted' : ''}`}
+                            id="openReviewModalBtn"
+                            onClick={openReviewModal}
+                        >
+                            <i className="fas fa-feather-alt"></i>{' '}
+                            {hasReviewed ? '✓ Review Shared' : 'Share Your Review'}
+                        </button>
+                    </div>
+                </div>
+
+                <div className="slider-controls-wrap reveal active">
+                    <button
+                        className="slider-arrow-btn slider-arrow-prev"
+                        onClick={() => setActiveReviewIdx((prev) => (prev - 1 + reviews.length) % reviews.length)}
+                        aria-label="Previous Review"
+                    >
+                        <i className="fas fa-chevron-left"></i>
+                    </button>
+                    <button
+                        className="slider-arrow-btn slider-arrow-next"
+                        onClick={() => setActiveReviewIdx((prev) => (prev + 1) % reviews.length)}
+                        aria-label="Next Review"
+                    >
+                        <i className="fas fa-chevron-right"></i>
+                    </button>
+
+                    <div className="testimonials-slider">
+                        <div
+                            className="testimonials-track"
+                            id="testimonialsTrack"
+                            style={{ transform: `translateX(-${activeReviewIdx * 100}%)` }}
+                        >
+                            {reviews.map((r, i) => (
+                                <div key={r._id || i} className="testimonial-item">
+                                    <div className="testimonial-stars">
+                                        {'★'.repeat(r.rating || 5)}{'☆'.repeat(5 - (r.rating || 5))}
+                                    </div>
+                                    <p className="testimonial-quote">“{r.quote}”</p>
+                                    <div className="testimonial-author">{r.authorName}</div>
+                                    <div className="testimonial-location">
+                                        {r.location || 'Sri Lanka'}
+                                        {r.productPurchased && (
+                                            <span style={{ color: 'var(--gold)' }}> · {r.productPurchased}</span>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="testimonials-dots" id="testimonialDots">
+                            {reviews.map((_, i) => (
+                                <div
+                                    key={i}
+                                    className={`test-dot ${i === activeReviewIdx ? 'active' : ''}`}
+                                    onClick={() => setActiveReviewIdx(i)}
+                                ></div>
                             ))}
                         </div>
                     </div>
-
-                    {loadingProducts ? (
-                        <div className="loading-spinner-box">
-                            <i className="fas fa-spinner fa-spin fa-2x" style={{ color: 'var(--gold)' }}></i>
-                            <p style={{ marginTop: '12px', color: 'var(--text-muted)' }}>Curating heirloom pieces...</p>
-                        </div>
-                    ) : (
-                        <div className="products-grid">
-                            {filteredProducts.map((p) => {
-                                const imgSrc = p.images && p.images[0] ? p.images[0] : '/images/wood_09.jpg';
-                                const priceNum = p.price || 0;
-                                return (
-                                    <div key={p._id} className="product-card">
-                                        <div className="product-thumb">
-                                            <img
-                                                src={imgSrc}
-                                                alt={p.name}
-                                                onError={(e) => { e.currentTarget.src = '/images/wood_09.jpg'; }}
-                                            />
-                                            {p.badge && <div className="product-badge-tag">{p.badge}</div>}
-                                            <div className="product-overlay-action">
-                                                <button
-                                                    className="product-quick-btn"
-                                                    onClick={() => handleOrderProduct(p)}
-                                                >
-                                                    Order Bespoke
-                                                </button>
-                                            </div>
-                                        </div>
-                                        <div className="product-details">
-                                            <span className="product-category">
-                                                {p.category ? p.category.toUpperCase() : 'SOLID TIMBER'}
-                                            </span>
-                                            <h3 className="product-title">{p.name}</h3>
-                                            <p className="product-spec">
-                                                {p.shortDescription || p.woodType || 'Solid Ceylon Hardwood'}
-                                            </p>
-                                            <div className="product-footer">
-                                                <span className="product-price">Rs. {priceNum.toLocaleString()}</span>
-                                                <button
-                                                    className="product-inquire"
-                                                    onClick={() => handleOrderProduct(p)}
-                                                >
-                                                    Order Bespoke →
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    )}
                 </div>
             </section>
 
-            {/* ═══════════════ PATRON REFLECTIONS & REVIEWS ═══════════════ */}
-            <section className="section reviews-section" id="reviews">
-                <div className="section-container">
-                    <div className="section-header reveal active">
-                        <span className="section-label">Patron Reflections</span>
-                        <h2 className="section-title">Words from Our Patrons</h2>
-                        <div className="reviews-summary-bar">
-                            <span className="stars-gold">
-                                {'★'.repeat(Math.round(reviewStats.average))}
-                                {'☆'.repeat(5 - Math.round(reviewStats.average))}
-                            </span>
-                            <strong>{reviewStats.average.toFixed(1)} / 5.0 Rating</strong>
-                            <span>· {reviewStats.total} Verified Patrons</span>
-                        </div>
-                        <div style={{ marginTop: '16px' }}>
-                            <button
-                                className={`btn-write-review ${hasReviewed ? 'submitted' : ''}`}
-                                onClick={handleOpenReviewModal}
-                            >
-                                <i className="fas fa-feather-alt"></i>{' '}
-                                {hasReviewed ? '✓ Review Shared' : 'Share Your Experience'}
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Testimonials Slider */}
-                    {reviews.length > 0 && (
-                        <div className="testimonial-slider-container">
-                            <div
-                                className="testimonial-track"
-                                style={{ transform: `translateX(-${activeReviewIdx * 100}%)` }}
-                            >
-                                {reviews.map((r, i) => (
-                                    <div key={r._id || i} className="testimonial-item">
-                                        <div className="testimonial-stars">
-                                            {'★'.repeat(r.rating || 5)}
-                                            {'☆'.repeat(5 - (r.rating || 5))}
-                                        </div>
-                                        <p className="testimonial-quote">“{r.quote}”</p>
-                                        <div className="testimonial-author">{r.authorName}</div>
-                                        <div className="testimonial-location">
-                                            {r.location || 'Sri Lanka'}
-                                            {r.productPurchased && (
-                                                <span style={{ color: 'var(--gold)' }}> · {r.productPurchased}</span>
-                                            )}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-
-                            <div className="testimonial-dots-bar">
-                                {reviews.map((_, i) => (
-                                    <div
-                                        key={i}
-                                        className={`test-dot ${i === activeReviewIdx ? 'active' : ''}`}
-                                        onClick={() => setActiveReviewIdx(i)}
-                                    ></div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-                </div>
-            </section>
-
-            {/* ═══════════════ REVIEW SUBMISSION MODAL ═══════════════ */}
+            {/* ═══ PATRON REVIEW SUBMISSION MODAL ═══ */}
             {isReviewModalOpen && (
-                <div className="review-modal-overlay open">
+                <div className="review-modal-overlay open" id="reviewModalOverlay">
                     <div className="review-modal">
-                        <button className="review-modal-close" onClick={() => setIsReviewModalOpen(false)}>
-                            &times;
-                        </button>
+                        <button className="review-modal-close" onClick={closeReviewModal}>&times;</button>
                         <div className="review-modal-title">Share Your Experience</div>
                         <div className="review-modal-sub">
                             Each patron is invited to share one authentic review of their Lansakara bespoke timber piece.
                         </div>
 
-                        {reviewAlert.message && (
+                        {reviewAlert.text && (
                             <div className={`review-alert ${reviewAlert.type}`} style={{ display: 'block' }}>
-                                {reviewAlert.message}
+                                {reviewAlert.text}
                             </div>
                         )}
 
-                        <form onSubmit={handleSubmitReview}>
+                        <form id="patronReviewForm" onSubmit={handleReviewSubmit}>
                             <div className="review-form-group">
                                 <label>Overall Rating *</label>
-                                <div className="review-star-selector">
+                                <div className="review-star-selector" id="starSelector">
                                     {[1, 2, 3, 4, 5].map((star) => (
                                         <i
                                             key={star}
                                             className={`fas fa-star star-btn ${reviewRating >= star ? 'active' : ''}`}
+                                            data-rating={star}
                                             onClick={() => setReviewRating(star)}
                                         ></i>
                                     ))}
-                                    <span className="star-label-desc">{ratingDescriptions[reviewRating]}</span>
+                                    <span className="star-label-desc" id="starLabelDesc">
+                                        {reviewRating === 5 && '5 Stars — Exceptional'}
+                                        {reviewRating === 4 && '4 Stars — Highly Impressed'}
+                                        {reviewRating === 3 && '3 Stars — Good Craftsmanship'}
+                                        {reviewRating === 2 && '2 Stars — Acceptable'}
+                                        {reviewRating === 1 && '1 Star — Needs Improvement'}
+                                    </span>
                                 </div>
                             </div>
 
@@ -595,10 +959,11 @@ export default function HomePage() {
                                     <input
                                         type="text"
                                         className="review-form-input"
+                                        id="revName"
                                         placeholder="e.g. Priyantha Jayasuriya"
                                         required
-                                        value={reviewForm.name}
-                                        onChange={(e) => setReviewForm({ ...reviewForm, name: e.target.value })}
+                                        value={reviewName}
+                                        onChange={(e) => setReviewName(e.target.value)}
                                     />
                                 </div>
                                 <div className="review-form-group">
@@ -606,10 +971,11 @@ export default function HomePage() {
                                     <input
                                         type="email"
                                         className="review-form-input"
+                                        id="revEmail"
                                         placeholder="e.g. priyantha@gmail.com"
                                         required
-                                        value={reviewForm.email}
-                                        onChange={(e) => setReviewForm({ ...reviewForm, email: e.target.value })}
+                                        value={reviewEmail}
+                                        onChange={(e) => setReviewEmail(e.target.value)}
                                     />
                                 </div>
                             </div>
@@ -620,9 +986,10 @@ export default function HomePage() {
                                     <input
                                         type="text"
                                         className="review-form-input"
+                                        id="revLocation"
                                         placeholder="e.g. Colombo 07, Kandy, Galle"
-                                        value={reviewForm.location}
-                                        onChange={(e) => setReviewForm({ ...reviewForm, location: e.target.value })}
+                                        value={reviewLocation}
+                                        onChange={(e) => setReviewLocation(e.target.value)}
                                     />
                                 </div>
                                 <div className="review-form-group">
@@ -630,9 +997,10 @@ export default function HomePage() {
                                     <input
                                         type="text"
                                         className="review-form-input"
+                                        id="revProduct"
                                         placeholder="e.g. Royal Dining Table or 3D Chair"
-                                        value={reviewForm.product}
-                                        onChange={(e) => setReviewForm({ ...reviewForm, product: e.target.value })}
+                                        value={reviewProduct}
+                                        onChange={(e) => setReviewProduct(e.target.value)}
                                     />
                                 </div>
                             </div>
@@ -641,11 +1009,12 @@ export default function HomePage() {
                                 <label>Your Review & Impressions *</label>
                                 <textarea
                                     className="review-form-textarea"
+                                    id="revQuote"
                                     rows="4"
-                                    placeholder="Describe the woodwork quality, timber grain, and bespoke delivery experience..."
+                                    placeholder="Describe the woodwork quality, finishing, timber grain, and your bespoke experience..."
                                     required
-                                    value={reviewForm.quote}
-                                    onChange={(e) => setReviewForm({ ...reviewForm, quote: e.target.value })}
+                                    value={reviewQuote}
+                                    onChange={(e) => setReviewQuote(e.target.value)}
                                 ></textarea>
                             </div>
 
@@ -654,13 +1023,14 @@ export default function HomePage() {
                                     type="button"
                                     className="btn-write-review"
                                     style={{ background: '#2C1E12', color: '#A89A8E' }}
-                                    onClick={() => setIsReviewModalOpen(false)}
+                                    onClick={closeReviewModal}
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     type="submit"
                                     className="btn-write-review"
+                                    id="submitReviewBtn"
                                     disabled={submittingReview}
                                 >
                                     {submittingReview ? (
@@ -679,159 +1049,198 @@ export default function HomePage() {
                 </div>
             )}
 
-            {/* ═══════════════ BESPOKE COMMISSION SECTION ═══════════════ */}
-            <section className="section contact-section" id="contact">
-                <div className="section-container">
-                    <div className="contact-grid">
-                        <div className="contact-info">
-                            <span className="section-label">Architectural Commissions</span>
-                            <h2 className="section-title">Create Your Heirloom Piece</h2>
-                            <p>
-                                Whether you require a monolithic live-edge table for an oceanfront villa or an entire bespoke dining suite, our master joiners provide complimentary design consultations and wood sample curation.
-                            </p>
-                            <div className="contact-meta-list">
-                                <div className="meta-item">
-                                    <i className="fas fa-map-marker-alt"></i>
-                                    <div>
-                                        <strong>Artisan Workshop</strong>
-                                        <span>Old Galle Road, Moratuwa, Sri Lanka</span>
-                                    </div>
-                                </div>
-                                <div className="meta-item">
-                                    <i className="fas fa-phone-alt"></i>
-                                    <div>
-                                        <strong>Artisan Hotline</strong>
-                                        <span>+94 (0) 77 123 4567 / +94 (0) 11 265 4321</span>
-                                    </div>
-                                </div>
-                                <div className="meta-item">
-                                    <i className="fas fa-envelope"></i>
-                                    <div>
-                                        <strong>Concierge Inquiries</strong>
-                                        <span>concierge@lansakara-furniture.com</span>
-                                    </div>
-                                </div>
+            {/* Contact & Bespoke Commission Form */}
+            <section className="section contact" id="contact">
+                <div className="section-header reveal active">
+                    <div className="section-label">Commission Your Piece</div>
+                    <h2 className="section-title">Let’s Create Something Eternal</h2>
+                    <p className="section-desc">
+                        Have a bespoke design in mind or want to customize one of our signature works? Our artisan team is ready to assist.
+                    </p>
+                </div>
+
+                <div className="contact-grid">
+                    <div className="contact-info reveal-left active">
+                        <h3>Visit Our Studio Workshop</h3>
+                        <p>
+                            Walk through our workshop, smell the fragrant sawdust of natural teak and cedar, and select the exact timber slab for your custom masterpiece.
+                        </p>
+
+                        <div className="contact-detail">
+                            <div className="icon">📍</div>
+                            <div className="text">
+                                <strong>Studio & Showroom</strong>
+                                <span>42 Timber Artisans Way, Colombo 07, Sri Lanka</span>
                             </div>
                         </div>
 
-                        <div className="contact-form-card">
-                            <form onSubmit={handleCommissionSubmit}>
-                                <div className="form-group">
-                                    <label>Your Full Name *</label>
-                                    <input
-                                        type="text"
-                                        required
-                                        placeholder="e.g. Dr. Kanishka Wickramasinghe"
-                                        value={commissionForm.name}
-                                        onChange={(e) => setCommissionForm({ ...commissionForm, name: e.target.value })}
-                                    />
-                                </div>
-                                <div className="form-row">
-                                    <div className="form-group">
-                                        <label>Phone / WhatsApp *</label>
-                                        <input
-                                            type="tel"
-                                            required
-                                            placeholder="+94 77 ..."
-                                            value={commissionForm.phone}
-                                            onChange={(e) => setCommissionForm({ ...commissionForm, phone: e.target.value })}
-                                        />
-                                    </div>
-                                    <div className="form-group">
-                                        <label>Email Address</label>
-                                        <input
-                                            type="email"
-                                            placeholder="you@domain.lk"
-                                            value={commissionForm.email}
-                                            onChange={(e) => setCommissionForm({ ...commissionForm, email: e.target.value })}
-                                        />
-                                    </div>
-                                </div>
-                                <div className="form-group">
-                                    <label>Commission Type</label>
-                                    <select
-                                        value={commissionForm.interest}
-                                        onChange={(e) => setCommissionForm({ ...commissionForm, interest: e.target.value })}
-                                    >
-                                        <option value="Royal Dining Suite">Royal Dining Suite (10-14 Seater)</option>
-                                        <option value="Live Edge Monolith">Live Edge Monolithic Table</option>
-                                        <option value="3D Royal Bespoke Chair">3D Royal Bespoke Chair</option>
-                                        <option value="Full Architectural Residence">Full Architectural Villa Suite</option>
-                                    </select>
-                                </div>
-                                <div className="form-group">
-                                    <label>Specifications / Preferred Timber</label>
-                                    <textarea
-                                        rows="3"
-                                        placeholder="Room dimensions, solid wood species preference, delivery target date..."
-                                        value={commissionForm.message}
-                                        onChange={(e) => setCommissionForm({ ...commissionForm, message: e.target.value })}
-                                    ></textarea>
-                                </div>
-                                <button type="submit" className="btn-primary" style={{ width: '100%' }}>
-                                    <i className="fab fa-whatsapp"></i> Inquire Directly via WhatsApp
-                                </button>
-                                {commissionSubmitted && (
-                                    <p style={{ marginTop: '10px', color: 'var(--green)', fontSize: '13px' }}>
-                                        ✓ WhatsApp inquiry window opened. Our master artisan will respond shortly.
-                                    </p>
-                                )}
-                            </form>
+                        <div className="contact-detail">
+                            <div className="icon">📞</div>
+                            <div className="text">
+                                <strong>Direct Consultations</strong>
+                                <span>+94 11 234 5678 / +94 77 123 4567</span>
+                            </div>
+                        </div>
+
+                        <div className="contact-detail">
+                            <div className="icon">✉️</div>
+                            <div className="text">
+                                <strong>Artisan Concierge</strong>
+                                <span>bespoke@lansakara-furniture.com</span>
+                            </div>
+                        </div>
+
+                        <div className="contact-detail">
+                            <div className="icon">🕒</div>
+                            <div className="text">
+                                <strong>Opening Hours</strong>
+                                <span>Mon – Sat: 9:00 AM – 6:30 PM (Private appointments welcomed)</span>
+                            </div>
                         </div>
                     </div>
+
+                    <form className="contact-form reveal-right active" id="bespokeForm" onSubmit={handleFormSubmit}>
+                        <div className="form-row">
+                            <div className="form-group">
+                                <input
+                                    type="text"
+                                    id="custName"
+                                    placeholder="Your Name"
+                                    required
+                                    value={contactForm.name}
+                                    onChange={(e) => setContactForm({ ...contactForm, name: e.target.value })}
+                                />
+                            </div>
+                            <div className="form-group">
+                                <input
+                                    type="email"
+                                    id="custEmail"
+                                    placeholder="Your Email"
+                                    required
+                                    value={contactForm.email}
+                                    onChange={(e) => setContactForm({ ...contactForm, email: e.target.value })}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="form-row">
+                            <div className="form-group">
+                                <input
+                                    type="tel"
+                                    id="custPhone"
+                                    placeholder="Phone / WhatsApp"
+                                    value={contactForm.phone}
+                                    onChange={(e) => setContactForm({ ...contactForm, phone: e.target.value })}
+                                />
+                            </div>
+                            <div className="form-group">
+                                <select
+                                    id="custProductType"
+                                    value={contactForm.productType}
+                                    onChange={(e) => setContactForm({ ...contactForm, productType: e.target.value })}
+                                >
+                                    <option value="">Select Furniture Type</option>
+                                    <option value="Lansakara Royal Bespoke Chair">Lansakara Royal Bespoke Chair (3D Studio)</option>
+                                    <option value="Live Edge Dining Table">Live Edge Dining Table</option>
+                                    <option value="Organic Wood Sofa">Organic Wood Sofa / Lounge</option>
+                                    <option value="Sculpted Coffee Table">Sculpted Coffee Table</option>
+                                    <option value="Solid Wood Bed">Bedroom Suite / Bed Frame</option>
+                                    <option value="Royal Carved Vanity">Vanity / Dressing Table</option>
+                                    <option value="Custom Architecture">Wall Panels & Architectural Wood</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div className="form-group">
+                            <textarea
+                                id="custMessage"
+                                placeholder="Tell us about your space, dimensions, preferred wood species, or custom ideas..."
+                                required
+                                value={contactForm.message}
+                                onChange={(e) => setContactForm({ ...contactForm, message: e.target.value })}
+                            ></textarea>
+                        </div>
+
+                        <button type="submit" className="form-submit-btn" id="submitBtn">
+                            Send Custom Inquiry
+                        </button>
+                        {contactSuccess && (
+                            <div
+                                id="orderSuccessMsg"
+                                style={{
+                                    display: 'block',
+                                    marginTop: '16px',
+                                    padding: '16px 20px',
+                                    background: 'rgba(39, 174, 96, 0.15)',
+                                    border: '1px solid #27ae60',
+                                    borderRadius: '6px',
+                                    color: '#2ecc71',
+                                    fontSize: '0.95rem',
+                                    lineHeight: '1.6'
+                                }}
+                            >
+                                ✓ Thank you! Your custom commission inquiry has been sent to our master artisan via WhatsApp.
+                            </div>
+                        )}
+                    </form>
                 </div>
             </section>
 
-            {/* ═══════════════ FOOTER ═══════════════ */}
+            {/* Footer */}
             <footer className="footer">
-                <div className="footer-container">
-                    <div className="footer-col brand-col">
-                        <span className="footer-brand">LANSAKARA</span>
-                        <p className="footer-desc">
-                            Handcrafting Ceylon royal solid wood furniture since 1974. Living timber art sculpted to endure generations.
+                <div className="footer-grid">
+                    <div className="footer-brand">
+                        <div className="footer-logo">Lansakara <span>Furniture</span></div>
+                        <p>
+                            Dedicated to the pure art of handcrafted solid wood furniture. Hand-carved, slow-seasoned, and lovingly finished for discerning homeowners worldwide.
                         </p>
-                        <div className="footer-socials">
-                            <a href="#"><i className="fab fa-instagram"></i></a>
-                            <a href="#"><i className="fab fa-facebook-f"></i></a>
-                            <a href="#"><i className="fab fa-whatsapp"></i></a>
-                        </div>
                     </div>
 
                     <div className="footer-col">
-                        <h4>Navigation</h4>
+                        <h4>Collections</h4>
                         <ul>
-                            <li><a href="#heritage">Artisan Heritage</a></li>
-                            <li><a href="#products">Timber Collections</a></li>
-                            <li><a href="#3d-chair">3D Bespoke Studio</a></li>
-                            <li><a href="#reviews">Patron Reflections</a></li>
-                            <li><a href="#contact">Custom Commission</a></li>
+                            <li><a href="#products">Live Edge Dining</a></li>
+                            <li><a href="#products">Organic Flow Sofas</a></li>
+                            <li><a href="#products">Sculpted Coffee Tables</a></li>
+                            <li><a href="#products">Heirloom Beds</a></li>
+                            <li><a href="#products">Hand-Carved Vanities</a></li>
                         </ul>
                     </div>
 
                     <div className="footer-col">
-                        <h4>Client Privileges</h4>
+                        <h4>Craftsmanship</h4>
                         <ul>
-                            <li><Link href="/checkout">Bespoke Checkout</Link></li>
-                            <li><a href="#products">10% Card Discount</a></li>
-                            <li><a href="#contact">White-Glove Delivery (Rs. 100/km)</a></li>
-                            <li><a href="#reviews">Authentic Patron Reviews</a></li>
-                            <li><Link href="/admin">Artisan Admin Portal</Link></li>
+                            <li><a href="#about">Our Wood Heritage</a></li>
+                            <li><a href="#gallery">Art Gallery</a></li>
+                            <li><a href="#features">Sustainable Forestry</a></li>
+                            <li><a href="#about">Mortise & Tenon Joinery</a></li>
                         </ul>
                     </div>
 
                     <div className="footer-col">
-                        <h4>Sri Lanka Atelier</h4>
-                        <p>Old Galle Road, Moratuwa, Sri Lanka</p>
-                        <p>Hotline: +94 (0) 77 123 4567</p>
-                        <p>Hours: Mon–Sat, 9:00 AM – 6:30 PM</p>
+                        <h4>Navigation & Privileges</h4>
+                        <ul>
+                            <li><Link href="/checkout">Bespoke Checkout (10% Card Off)</Link></li>
+                            <li><Link href="/admin">Master Artisan Admin</Link></li>
+                            <li><a href="#testimonials">Verified Patron Reviews</a></li>
+                            <li><a href="https://wa.me/94771234567" target="_blank" rel="noopener noreferrer">WhatsApp Concierge</a></li>
+                        </ul>
                     </div>
                 </div>
 
                 <div className="footer-bottom">
-                    <p>© 2026 Lansakara Royal Furniture (Pvt) Ltd. All rights reserved.</p>
-                    <p>Handcrafted with Ceylon Solid Hardwood • Moratuwa Woodcraft Guild</p>
+                    <p>&copy; 2026 Lansakara Furniture Ceylon. All rights reserved. Handcrafted with reverence for nature.</p>
                 </div>
             </footer>
+
+            {/* Back to top button */}
+            <button
+                className="back-to-top"
+                id="backToTop"
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            >
+                ↑
+            </button>
         </div>
     );
 }
