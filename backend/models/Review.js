@@ -53,4 +53,4 @@ const reviewSchema = new mongoose.Schema({
 // Prevent duplicate email review on database level
 reviewSchema.index({ email: 1 }, { unique: true });
 
-module.exports = mongoose.model('Review', reviewSchema);
+module.exports = mongoose.models.Review || mongoose.model('Review', reviewSchema);

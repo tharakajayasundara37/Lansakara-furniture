@@ -13,4 +13,4 @@ adminSchema.methods.comparePassword = async function(plainPassword) {
   return await bcrypt.compare(plainPassword, this.passwordHash);
 };
 
-module.exports = mongoose.model('Admin', adminSchema);
+module.exports = mongoose.models.Admin || mongoose.model('Admin', adminSchema);
