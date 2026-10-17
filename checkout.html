@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bespoke Checkout & Payment — Lansakara Furniture</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --gold: #D4AF37;
+      --gold-light: #F3E5AB;
+      --gold-dark: #997B24;
+      --wood-dark: #120A05;
+      --wood-deep: #1A1008;
+      --wood-card: #22160C;
+      --wood-input: #2C1E12;
+      --wood-border: rgba(212, 175, 55, 0.22);
+      --wood-border-focus: rgba(212, 175, 55, 0.7);
+      --text: #F5EFEB;
+      --text-muted: #A89A8E;
+      --text-dim: #786C62;
+      --green: #27AE60;
+      --green-light: #2ECC71;
+      --red: #E74C3C;
+      --radius: 12px;
+      --shadow: 0 15px 40px rgba(0,0,0,0.5);
+      --shadow-gold: 0 8px 30px rgba(212, 175, 55, 0.2);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--wood-dark);
+      color: var(--text);
+      min-height: 100vh;
+      background-image: radial-gradient(circle at 50% 0%, rgba(212, 175, 55, 0.08) 0%, transparent 60%);
+      line-height: 1.5;
+    }
+
+    /* ─── NAVBAR ─────────────────────────────────────────── */
+    .checkout-nav {
+      padding: 20px 40px;
+      background: rgba(18, 10, 5, 0.95);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--wood-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .brand-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+    }
+    .brand-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 24px;
+      color: var(--gold);
+      letter-spacing: 1px;
+    }
+    .brand-title span {
+      font-style: italic;
+      color: var(--gold-light);
+      font-weight: 400;
+    }
+    .concierge-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--text-muted);
+      border: 1px solid var(--wood-border);
+      padding: 6px 14px;
+      border-radius: 20px;
+      background: rgba(212, 175, 55, 0.05);
+    }
+    .back-btn {
+      color: var(--gold);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .back-btn:hover { color: var(--gold-light); transform: translateX(-3px); }
+
+    /* ─── MAIN CONTAINER ─────────────────────────────────── */
+    .checkout-container {
+      max-width: 1200px;
+      margin: 40px auto;
+      padding: 0 24px 80px;
+    }
+
+    .page-header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    .page-eyebrow {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      color: var(--gold);
+      margin-bottom: 8px;
+    }
+    .page-heading {
+      font-family: 'Playfair Display', serif;
+      font-size: 36px;
+      color: var(--text);
+    }
+
+    .checkout-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      align-items: start;
+    }
+
+    @media (max-width: 900px) {
+      .checkout-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ─── CARDS ───────────────────────────────────────────── */
+    .c-card {
+      background: var(--wood-card);
+      border: 1px solid var(--wood-border);
+      border-radius: var(--radius);
+      padding: 28px;
+      box-shadow: var(--shadow);
+      margin-bottom: 24px;
+    }
+    .c-card:last-child { margin-bottom: 0; }
+    .card-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 20px;
+      color: var(--gold);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .card-title i { font-size: 18px; opacity: 0.85; }
+
+    /* ─── PRODUCT PREVIEW ─────────────────────────────────── */
+    .prod-summary-box {
+      display: flex;
+      gap: 20px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--wood-border);
+    }
+    .prod-img-wrap {
+      width: 100px;
+      height: 100px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--wood-border);
+      flex-shrink: 0;
+      background: var(--wood-deep);
+    }
+    .prod-img-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .prod-meta h4 {
+      font-family: 'Playfair Display', serif;
+      font-size: 18px;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+    .prod-specs-tag {
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.4;
+      margin-bottom: 8px;
+    }
+    .prod-price-tag {
+      font-size: 16px;
+      color: var(--gold);
+      font-weight: 600;
+    }
+
+    /* ─── FORM CONTROLS ───────────────────────────────────── */
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .form-group { margin-bottom: 16px; }
+    .form-group.full { grid-column: 1 / -1; }
+    .form-group:last-child { margin-bottom: 0; }
+
+    .form-label {
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+    .form-input, .form-select, .form-textarea {
+      width: 100%;
+      background: var(--wood-input);
+      border: 1px solid var(--wood-border);
+      border-radius: 8px;
+      padding: 12px 14px;
+      color: var(--text);
+      font-size: 14px;
+      font-family: 'Inter', sans-serif;
+      outline: none;
+      transition: all 0.25s;
+    }
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+      border-color: var(--gold);
+      box-shadow: 0 0 12px rgba(212, 175, 55, 0.2);
+    }
+    .form-select option { background: var(--wood-card); color: var(--text); }
+    .form-textarea { resize: vertical; min-height: 70px; }
+
+    .delivery-helper {
+      font-size: 12px;
+      color: var(--gold-light);
+      margin-top: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* ─── PAYMENT METHOD TABS ────────────────────────────── */
+    .payment-options-grid {
+      display: grid;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .payment-card-opt {
+      background: var(--wood-deep);
+      border: 1.5px solid var(--wood-border);
+      border-radius: 10px;
+      padding: 16px 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: all 0.25s;
+    }
+    .payment-card-opt:hover { border-color: rgba(212, 175, 55, 0.5); }
+    .payment-card-opt.active {
+      border-color: var(--gold);
+      background: rgba(212, 175, 55, 0.08);
+      box-shadow: var(--shadow-gold);
+    }
+    .p-opt-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .p-opt-radio {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: 2px solid var(--wood-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+    .payment-card-opt.active .p-opt-radio {
+      border-color: var(--gold);
+    }
+    .payment-card-opt.active .p-opt-radio::after {
+      content: '';
+      width: 8px;
+      height: 8px;
+      background: var(--gold);
+      border-radius: 50%;
+    }
+    .p-opt-text h5 {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .p-opt-text p {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+    .p-opt-badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 12px;
+      letter-spacing: 0.5px;
+    }
+    .badge-discount {
+      background: rgba(39, 174, 96, 0.2);
+      border: 1px solid var(--green);
+      color: var(--green-light);
+    }
+    .badge-advance {
+      background: rgba(212, 175, 55, 0.15);
+      border: 1px solid var(--gold);
+      color: var(--gold-light);
+    }
+
+    /* ─── PAYMENT DETAILS BOXES ──────────────────────────── */
+    .pay-detail-box {
+      display: none;
+      background: var(--wood-deep);
+      border: 1px solid var(--wood-border);
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+    .pay-detail-box.active { display: block; }
+
+    /* Card Details Form */
+    .card-icons {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 14px;
+      font-size: 24px;
+      color: var(--text-muted);
+    }
+
+    /* Bank Account Box */
+    .bank-info-grid {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .bank-info-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      padding: 8px 12px;
+      background: rgba(255,255,255,0.03);
+      border-radius: 6px;
+    }
+    .bank-info-row .lbl { color: var(--text-muted); }
+    .bank-info-row .val { color: var(--gold-light); font-weight: 600; font-family: monospace; }
+
+    /* Upload Receipt Box */
+    .upload-receipt-area {
+      border: 2px dashed var(--wood-border);
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: rgba(0,0,0,0.2);
+    }
+    .upload-receipt-area:hover { border-color: var(--gold); }
+    .upload-receipt-area i { font-size: 28px; color: var(--gold); margin-bottom: 8px; }
+    .upload-receipt-area p { font-size: 13px; color: var(--text); }
+    .upload-receipt-area span { font-size: 11px; color: var(--text-dim); }
+
+    .receipt-preview-thumb {
+      display: none;
+      margin-top: 12px;
+      max-height: 120px;
+      border-radius: 6px;
+      border: 1px solid var(--wood-border);
+    }
+
+    /* ─── PRICE BREAKDOWN ────────────────────────────────── */
+    .breakdown-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      font-size: 14px;
+      color: var(--text-muted);
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .breakdown-row.discount-row { color: var(--green-light); font-weight: 500; }
+    .breakdown-row.total-row {
+      border-bottom: none;
+      padding-top: 16px;
+      margin-top: 8px;
+      font-family: 'Playfair Display', serif;
+      font-size: 22px;
+      color: var(--gold);
+      font-weight: 700;
+    }
+    .breakdown-row.advance-row {
+      background: rgba(212, 175, 55, 0.08);
+      border: 1px solid var(--wood-border);
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin-top: 12px;
+      color: var(--gold-light);
+      font-size: 14px;
+    }
+
+    /* ─── SUBMIT BUTTON ──────────────────────────────────── */
+    .btn-submit-order {
+      width: 100%;
+      background: linear-gradient(135deg, var(--gold-dark), var(--gold));
+      color: var(--wood-dark);
+      border: none;
+      border-radius: 8px;
+      padding: 16px;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.3s;
+      margin-top: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+    }
+    .btn-submit-order:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(212, 175, 55, 0.5);
+    }
+    .btn-submit-order:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* ─── SUCCESS MODAL ──────────────────────────────────── */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.85); backdrop-filter: blur(8px);
+      display: none; align-items: center; justify-content: center;
+      z-index: 1000; padding: 20px;
+    }
+    .modal-overlay.open { display: flex; }
+    .success-card {
+      background: var(--wood-card);
+      border: 1px solid var(--gold);
+      border-radius: 16px;
+      padding: 40px;
+      max-width: 540px;
+      width: 100%;
+      text-align: center;
+      box-shadow: var(--shadow);
+    }
+    .success-icon {
+      width: 70px;
+      height: 70px;
+      margin: 0 auto 20px;
+      border-radius: 50%;
+      background: rgba(39, 174, 96, 0.2);
+      border: 2px solid var(--green);
+      color: var(--green-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+    }
+    .order-ref-pill {
+      display: inline-block;
+      background: rgba(212, 175, 55, 0.15);
+      border: 1px solid var(--gold);
+      color: var(--gold-light);
+      font-family: monospace;
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      padding: 8px 18px;
+      border-radius: 20px;
+      margin: 14px 0 20px;
+    }
+    .success-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 28px;
+    }
+    .btn-whatsapp {
+      background: #25D366;
+      color: #fff;
+      text-decoration: none;
+      padding: 14px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+    .btn-whatsapp:hover { background: #20BA5A; }
+    .btn-return {
+      background: var(--wood-deep);
+      border: 1px solid var(--wood-border);
+      color: var(--text-muted);
+      text-decoration: none;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 13px;
+    }
+    .btn-return:hover { border-color: var(--gold); color: var(--gold); }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════ NAVIGATION ═══════════════ -->
+<header class="checkout-nav">
+  <a href="/" class="brand-wrap">
+    <div class="brand-title">Lansakara <span>Furniture</span></div>
+  </a>
+  <div class="concierge-badge">
+    <i class="fas fa-shield-alt" style="color:var(--gold)"></i> Official Bespoke Order Concierge
+  </div>
+  <a href="/" class="back-btn">
+    <i class="fas fa-arrow-left"></i> Return to Showcase
+  </a>
+</header>
+
+<!-- ═══════════════ MAIN CONTENT ═══════════════ -->
+<main class="checkout-container">
+  <div class="page-header">
+    <div class="page-eyebrow">Handcrafted Luxury Timber Studio</div>
+    <h1 class="page-heading">Bespoke Order & Payment</h1>
+  </div>
+
+  <div class="checkout-grid">
+    
+    <!-- LEFT COLUMN: PRODUCT REVIEW & DELIVERY -->
+    <div class="left-col">
+      <!-- 1. Masterpiece Summary -->
+      <div class="c-card">
+        <h3 class="card-title"><i class="fas fa-couch"></i> Selected Masterpiece</h3>
+        <div class="prod-summary-box">
+          <div class="prod-img-wrap">
+            <img id="summaryImg" src="images/lansakara_royal_chair.jpg" alt="Selected Product" onerror="this.src='images/wood_09.jpg'">
+          </div>
+          <div class="prod-meta">
+            <h4 id="summaryName">Lansakara Royal Bespoke Chair</h4>
+            <p class="prod-specs-tag" id="summarySpecs">Custom 3D Configured • Royal Hardwood & Velvet</p>
+            <div class="prod-price-tag" id="summaryBasePrice">Rs. 214,500</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. Customer & Delivery Address -->
+      <div class="c-card">
+        <h3 class="card-title"><i class="fas fa-map-marker-alt"></i> Delivery Destination</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Full Name *</label>
+            <input class="form-input" id="custName" placeholder="e.g. Ruwan Jayawardena" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Phone / WhatsApp *</label>
+            <input class="form-input" id="custPhone" type="tel" placeholder="077 123 4567" required />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Email Address *</label>
+          <input class="form-input" id="custEmail" type="email" placeholder="ruwan@example.com" required />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">District / Region *</label>
+            <select class="form-select" id="custDistrict" onchange="handleDistrictChange()">
+              <option value="Colombo" data-km="15">Colombo (approx. 15 km)</option>
+              <option value="Gampaha" data-km="35">Gampaha (approx. 35 km)</option>
+              <option value="Kalutara" data-km="28">Kalutara (approx. 28 km)</option>
+              <option value="Kandy" data-km="120">Kandy (approx. 120 km)</option>
+              <option value="Galle" data-km="105">Galle (approx. 105 km)</option>
+              <option value="Matara" data-km="145">Matara (approx. 145 km)</option>
+              <option value="Kurunegala" data-km="100">Kurunegala (approx. 100 km)</option>
+              <option value="Ratnapura" data-km="85">Ratnapura (approx. 85 km)</option>
+              <option value="Negombo" data-km="45">Negombo (approx. 45 km)</option>
+              <option value="Other" data-km="25">Other Location (Custom km)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Delivery Distance (KM) *</label>
+            <input class="form-input" id="deliveryKm" type="number" value="15" min="1" max="500" oninput="recalculateTotals()" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Street Address *</label>
+          <textarea class="form-textarea" id="custAddress" rows="2" placeholder="House / Building No, Road, Town" required></textarea>
+        </div>
+
+        <div class="delivery-helper" id="deliveryRateNotice">
+          <i class="fas fa-truck-moving"></i> <span>White-glove delivery: Rs. 100 per km from Moratuwa Workshop</span>
+        </div>
+      </div>
+
+      <!-- 3. Bespoke Notes -->
+      <div class="c-card">
+        <h3 class="card-title"><i class="fas fa-pen-fancy"></i> Custom Requests & Notes</h3>
+        <textarea class="form-textarea" id="customNotes" rows="2" placeholder="Room floor level, preferred wood stain adjustments, or delivery timing..."></textarea>
+      </div>
+    </div>
+
+    <!-- RIGHT COLUMN: PAYMENT METHODS & TOTALS -->
+    <div class="right-col">
+      <div class="c-card">
+        <h3 class="card-title"><i class="fas fa-wallet"></i> Payment Method</h3>
+
+        <!-- Option 1: Card Payment (with discount) -->
+        <div class="payment-options-grid">
+          <div class="payment-card-opt active" id="opt-card" onclick="selectPaymentMethod('card')">
+            <div class="p-opt-left">
+              <div class="p-opt-radio"></div>
+              <div class="p-opt-text">
+                <h5>Credit / Debit Card</h5>
+                <p>Instant secure payment</p>
+              </div>
+            </div>
+            <span class="p-opt-badge badge-discount" id="cardDiscountBadge">10% OFF</span>
+          </div>
+
+          <!-- Option 2: Bank Deposit -->
+          <div class="payment-card-opt" id="opt-bank" onclick="selectPaymentMethod('bank_transfer')">
+            <div class="p-opt-left">
+              <div class="p-opt-radio"></div>
+              <div class="p-opt-text">
+                <h5>Direct Bank Transfer</h5>
+                <p>Deposit & upload transfer slip</p>
+              </div>
+            </div>
+            <span class="p-opt-badge badge-advance" style="background:rgba(255,255,255,0.06);color:var(--text-muted);border:none;">Bank Slip</span>
+          </div>
+
+          <!-- Option 3: Cash on Delivery with Advance -->
+          <div class="payment-card-opt" id="opt-cod" onclick="selectPaymentMethod('cod')">
+            <div class="p-opt-left">
+              <div class="p-opt-radio"></div>
+              <div class="p-opt-text">
+                <h5>Cash on Delivery (COD)</h5>
+                <p id="codAdvanceDesc">20% commitment advance + balance upon delivery</p>
+              </div>
+            </div>
+            <span class="p-opt-badge badge-advance" id="codAdvanceBadge">20% Advance</span>
+          </div>
+        </div>
+
+        <!-- ── TAB 1 DETAILS: CARD PAYMENT FORM ── -->
+        <div class="pay-detail-box active" id="box-card">
+          <div class="card-icons">
+            <i class="fab fa-cc-visa"></i>
+            <i class="fab fa-cc-mastercard"></i>
+            <i class="fab fa-cc-amex"></i>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Card Number</label>
+            <input class="form-input" id="cardNumber" placeholder="•••• •••• •••• ••••" maxlength="19" />
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Expiry Date</label>
+              <input class="form-input" id="cardExpiry" placeholder="MM/YY" maxlength="5" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">CVV / CVC</label>
+              <input class="form-input" id="cardCvv" placeholder="•••" maxlength="4" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Cardholder Name</label>
+            <input class="form-input" id="cardName" placeholder="Name as printed on card" />
+          </div>
+          <p style="font-size:11px;color:var(--text-dim);margin-top:6px;">
+            🔒 256-bit TLS bank-grade encrypted verification.
+          </p>
+        </div>
+
+        <!-- ── TAB 2 & 3 DETAILS: BANK DETAILS & SLIP UPLOAD ── -->
+        <div class="pay-detail-box" id="box-bank">
+          <div class="bank-info-grid">
+            <div class="bank-info-row"><span class="lbl">Bank:</span><span class="val" id="bankNameDisplay">Commercial Bank of Ceylon</span></div>
+            <div class="bank-info-row"><span class="lbl">Account Name:</span><span class="val" id="bankAccNameDisplay">Lansakara Furniture (Pvt) Ltd</span></div>
+            <div class="bank-info-row"><span class="lbl">Account No:</span><span class="val" id="bankAccNoDisplay">1000847291</span></div>
+            <div class="bank-info-row"><span class="lbl">Branch:</span><span class="val" id="bankBranchDisplay">Moratuwa Premium Branch</span></div>
+          </div>
+          <div class="upload-receipt-area" onclick="document.getElementById('receiptFile').click()">
+            <i class="fas fa-file-invoice-dollar"></i>
+            <p id="receiptUploadTitle">Upload Bank Deposit / Transfer Slip</p>
+            <span>JPG, PNG or PDF (Max 12MB)</span>
+            <input type="file" id="receiptFile" accept="image/*,application/pdf" style="display:none;" onchange="handleReceiptFile(event)" />
+            <br>
+            <img class="receipt-preview-thumb" id="receiptThumbPreview" alt="Receipt Preview" />
+          </div>
+        </div>
+
+        <!-- ── PRICE BREAKDOWN ── -->
+        <div style="margin-top:24px;">
+          <div class="breakdown-row">
+            <span>Product Subtotal</span>
+            <span id="rowSubtotal">Rs. 0</span>
+          </div>
+          <div class="breakdown-row">
+            <span>Delivery Fee (<span id="rowDistKm">15</span> km @ Rs. <span id="rowRateKm">100</span>)</span>
+            <span id="rowDeliveryFee">Rs. 1,500</span>
+          </div>
+          <div class="breakdown-row discount-row" id="rowDiscountWrap">
+            <span id="discountLabel">Card Discount (10%)</span>
+            <span id="rowDiscount">-Rs. 0</span>
+          </div>
+          <div class="breakdown-row total-row">
+            <span>Total Amount</span>
+            <span id="rowTotal">Rs. 0</span>
+          </div>
+          <div class="breakdown-row advance-row" id="rowAdvanceWrap" style="display:none;">
+            <div>
+              <strong>Advance Required Today:</strong>
+              <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Remaining on Delivery: <span id="rowRemainingBalance">Rs. 0</span></div>
+            </div>
+            <strong style="font-size:16px;color:var(--gold);" id="rowAdvanceAmount">Rs. 0</strong>
+          </div>
+        </div>
+
+        <button class="btn-submit-order" id="submitOrderBtn" onclick="submitBespokeOrder()">
+          <i class="fas fa-lock"></i> <span>Confirm & Place Bespoke Order</span>
+        </button>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<!-- ═══════════════ ORDER SUCCESS MODAL ═══════════════ -->
+<div class="modal-overlay" id="successModal">
+  <div class="success-card">
+    <div class="success-icon"><i class="fas fa-check"></i></div>
+    <h2 style="font-family:'Playfair Display',serif;font-size:26px;color:var(--gold);margin-bottom:6px;">Bespoke Order Confirmed!</h2>
+    <p style="font-size:13px;color:var(--text-muted);">Thank you for trusting Lansakara handcrafted excellence. Your order has been registered in our artisan workshop.</p>
+    
+    <div class="order-ref-pill" id="displayOrderId">#LAN-0000</div>
+    
+    <div style="font-size:13px;color:var(--text);margin-bottom:12px;text-align:left;background:var(--wood-deep);padding:14px;border-radius:8px;border:1px solid var(--wood-border);">
+      <div style="margin-bottom:6px;"><strong>Product:</strong> <span id="modalProdName">—</span></div>
+      <div style="margin-bottom:6px;"><strong>Payment Method:</strong> <span id="modalPayMethod" style="text-transform:capitalize">—</span></div>
+      <div><strong>Total Investment:</strong> <span id="modalTotal" style="color:var(--gold);font-weight:700">—</span></div>
+    </div>
+
+    <div class="success-actions">
+      <a href="#" class="btn-whatsapp" id="whatsappDirectLink" target="_blank">
+        <i class="fab fa-whatsapp" style="font-size:20px;"></i> Chat with Artisan on WhatsApp
+      </a>
+      <a href="/" class="btn-return">
+        Return to Collections Gallery
+      </a>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── STATE & CONFIG ──────────────────────────────────────────
+let currentSettings = {
+  cardDiscountPercent: 10,
+  deliveryRatePerKm: 100,
+  codAdvancePercent: 20,
+  bankDetails: {
+    bankName: 'Commercial Bank of Ceylon',
+    accountName: 'Lansakara Furniture (Pvt) Ltd',
+    accountNumber: '1000847291',
+    branch: 'Moratuwa Premium Branch'
+  }
+};
+
+let currentProduct = {
+  name: 'Lansakara Royal Bespoke Chair',
+  price: 214500,
+  image: 'images/lansakara_royal_chair.jpg',
+  specs: 'Solid Hardwood • Live 3D Studio Configuration',
+  wood: '',
+  fabric: '',
+  trim: ''
+};
+
+let selectedPayment = 'card';
+let uploadedReceiptFile = null;
+
+// ─── INIT ────────────────────────────────────────────────────
+window.addEventListener('load', async () => {
+  await loadServerSettings();
+  loadProductFromStorageOrQuery();
+  recalculateTotals();
+});
+
+// Load Settings from API
+async function loadServerSettings() {
+  try {
+    const res = await fetch('/api/settings');
+    if (res.ok) {
+      currentSettings = await res.json();
+      updateSettingsUI();
+    }
+  } catch (e) {
+    console.warn('Could not load server settings, using defaults:', e);
+  }
+}
+
+function updateSettingsUI() {
+  const discount = currentSettings.cardDiscountPercent || 10;
+  const rate = currentSettings.deliveryRatePerKm || 100;
+  const advance = currentSettings.codAdvancePercent || 20;
+
+  document.getElementById('cardDiscountBadge').textContent = `${discount}% OFF`;
+  document.getElementById('codAdvanceBadge').textContent = `${advance}% Advance`;
+  document.getElementById('codAdvanceDesc').textContent = `${advance}% commitment advance + balance upon delivery`;
+  document.getElementById('deliveryRateNotice').innerHTML = 
+    `<i class="fas fa-truck-moving"></i> <span>White-glove delivery: Rs. ${rate.toLocaleString()} per km from Moratuwa Workshop</span>`;
+  document.getElementById('rowRateKm').textContent = rate.toLocaleString();
+
+  if (currentSettings.bankDetails) {
+    document.getElementById('bankNameDisplay').textContent = currentSettings.bankDetails.bankName || 'Commercial Bank';
+    document.getElementById('bankAccNameDisplay').textContent = currentSettings.bankDetails.accountName || 'Lansakara Furniture';
+    document.getElementById('bankAccNoDisplay').textContent = currentSettings.bankDetails.accountNumber || '1000847291';
+    document.getElementById('bankBranchDisplay').textContent = currentSettings.bankDetails.branch || 'Moratuwa';
+  }
+}
+
+// Read Product details passed from main website
+function loadProductFromStorageOrQuery() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const qName = urlParams.get('product');
+  const qPrice = urlParams.get('price');
+  const qImg = urlParams.get('image');
+
+  const savedOrder = localStorage.getItem('lansakara_checkout_order');
+  if (savedOrder) {
+    try {
+      const parsed = JSON.parse(savedOrder);
+      currentProduct = { ...currentProduct, ...parsed };
+    } catch(e) {}
+  } else if (qName) {
+    currentProduct.name = decodeURIComponent(qName);
+    if (qPrice) currentProduct.price = parseFloat(qPrice);
+    if (qImg) currentProduct.image = decodeURIComponent(qImg);
+  }
+
+  // Populate UI
+  document.getElementById('summaryName').textContent = currentProduct.name;
+  document.getElementById('summaryBasePrice').textContent = `Rs. ${(currentProduct.price || 0).toLocaleString()}`;
+  document.getElementById('summaryImg').src = currentProduct.image || 'images/wood_09.jpg';
+  
+  if (currentProduct.specs) {
+    document.getElementById('summarySpecs').textContent = currentProduct.specs;
+  } else if (currentProduct.woodSpec || currentProduct.fabricSpec) {
+    document.getElementById('summarySpecs').textContent = 
+      `Wood: ${currentProduct.woodSpec || 'Teak'} • Fabric: ${currentProduct.fabricSpec || 'Linen'} • Trim: ${currentProduct.trimSpec || 'Gold'}`;
+  }
+}
+
+// ─── DISTRICT & DISTANCE ─────────────────────────────────────
+function handleDistrictChange() {
+  const select = document.getElementById('custDistrict');
+  const selectedOption = select.options[select.selectedIndex];
+  const km = selectedOption.getAttribute('data-km');
+  if (km) {
+    document.getElementById('deliveryKm').value = km;
+    recalculateTotals();
+  }
+}
+
+// ─── PAYMENT SELECTION ───────────────────────────────────────
+function selectPaymentMethod(method) {
+  selectedPayment = method;
+  document.querySelectorAll('.payment-card-opt').forEach(el => el.classList.remove('active'));
+  document.getElementById('opt-' + (method === 'bank_transfer' ? 'bank' : method)).classList.add('active');
+
+  const cardBox = document.getElementById('box-card');
+  const bankBox = document.getElementById('box-bank');
+
+  if (method === 'card') {
+    cardBox.classList.add('active');
+    bankBox.classList.remove('active');
+  } else {
+    cardBox.classList.remove('active');
+    bankBox.classList.add('active');
+
+    // Update upload title based on COD vs Bank
+    const title = method === 'cod' 
+      ? `Upload ${currentSettings.codAdvancePercent || 20}% Advance Payment Slip / Transfer Screenshot`
+      : 'Upload Full Bank Deposit / Transfer Slip';
+    document.getElementById('receiptUploadTitle').textContent = title;
+  }
+
+  recalculateTotals();
+}
+
+// ─── TOTAL CALCULATION ───────────────────────────────────────
+function recalculateTotals() {
+  const subtotal = currentProduct.price || 0;
+  const km = Math.max(1, parseFloat(document.getElementById('deliveryKm').value) || 15);
+  const ratePerKm = currentSettings.deliveryRatePerKm || 100;
+  const deliveryFee = km * ratePerKm;
+
+  const cardDiscountPercent = currentSettings.cardDiscountPercent || 10;
+  const codAdvancePercent = currentSettings.codAdvancePercent || 20;
+
+  let discount = 0;
+  if (selectedPayment === 'card') {
+    discount = Math.round((subtotal * cardDiscountPercent) / 100);
+    document.getElementById('rowDiscountWrap').style.display = 'flex';
+    document.getElementById('discountLabel').textContent = `Card Payment Discount (${cardDiscountPercent}%)`;
+    document.getElementById('rowDiscount').textContent = `-Rs. ${discount.toLocaleString()}`;
+  } else {
+    document.getElementById('rowDiscountWrap').style.display = 'none';
+  }
+
+  const finalTotal = Math.max(0, subtotal - discount + deliveryFee);
+
+  document.getElementById('rowSubtotal').textContent = `Rs. ${subtotal.toLocaleString()}`;
+  document.getElementById('rowDistKm').textContent = km;
+  document.getElementById('rowDeliveryFee').textContent = `Rs. ${deliveryFee.toLocaleString()}`;
+  document.getElementById('rowTotal').textContent = `Rs. ${finalTotal.toLocaleString()}`;
+
+  // Advance calculation for COD
+  const advanceWrap = document.getElementById('rowAdvanceWrap');
+  if (selectedPayment === 'cod') {
+    advanceWrap.style.display = 'flex';
+    const advanceAmount = Math.round((finalTotal * codAdvancePercent) / 100);
+    const remaining = finalTotal - advanceAmount;
+    document.getElementById('rowAdvanceAmount').textContent = `Rs. ${advanceAmount.toLocaleString()}`;
+    document.getElementById('rowRemainingBalance').textContent = `Rs. ${remaining.toLocaleString()}`;
+  } else {
+    advanceWrap.style.display = 'none';
+  }
+}
+
+// ─── FILE UPLOAD PREVIEW ─────────────────────────────────────
+function handleReceiptFile(evt) {
+  const file = evt.target.files[0];
+  if (!file) return;
+  uploadedReceiptFile = file;
+
+  const preview = document.getElementById('receiptThumbPreview');
+  const reader = new FileReader();
+  reader.onload = e => {
+    preview.src = e.target.result;
+    preview.style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+
+  document.getElementById('receiptUploadTitle').textContent = `✓ Attached: ${file.name}`;
+}
+
+// ─── SUBMIT ORDER ─────────────────────────────────────────────
+async function submitBespokeOrder() {
+  const name = document.getElementById('custName').value.trim();
+  const phone = document.getElementById('custPhone').value.trim();
+  const email = document.getElementById('custEmail').value.trim();
+  const address = document.getElementById('custAddress').value.trim();
+  const district = document.getElementById('custDistrict').value;
+  const km = parseFloat(document.getElementById('deliveryKm').value) || 15;
+  const notes = document.getElementById('customNotes').value.trim();
+
+  if (!name || !phone || !email || !address) {
+    alert('Please fill in your Name, Phone, Email, and Delivery Address.');
+    return;
+  }
+
+  // Validate Card if card selected
+  let maskedCard = '';
+  if (selectedPayment === 'card') {
+    const cardNum = document.getElementById('cardNumber').value.replace(/\s+/g, '');
+    if (!cardNum || cardNum.length < 12) {
+      alert('Please enter a valid Credit / Debit card number.');
+      document.getElementById('cardNumber').focus();
+      return;
+    }
+    maskedCard = '•••• •••• •••• ' + cardNum.slice(-4);
+  }
+
+  // Validate receipt if COD or Bank transfer
+  if ((selectedPayment === 'bank_transfer' || selectedPayment === 'cod') && !uploadedReceiptFile) {
+    const confirmProceed = confirm(
+      selectedPayment === 'cod'
+        ? `A ${currentSettings.codAdvancePercent || 20}% commitment deposit is required for bespoke transport. If you haven't transferred yet, you can send the slip via WhatsApp after placing the order. Proceed?`
+        : 'You have not uploaded the bank deposit slip yet. You can also send it via WhatsApp after placing. Proceed?'
+    );
+    if (!confirmProceed) return;
+  }
+
+  const btn = document.getElementById('submitOrderBtn');
+  btn.disabled = true;
+  btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Registering Bespoke Order...`;
+
+  const subtotal = currentProduct.price || 0;
+  const deliveryFee = km * (currentSettings.deliveryRatePerKm || 100);
+  const cardDiscountPercent = (selectedPayment === 'card') ? (currentSettings.cardDiscountPercent || 10) : 0;
+  const discountAmount = Math.round((subtotal * cardDiscountPercent) / 100);
+  const finalTotal = Math.max(0, subtotal - discountAmount + deliveryFee);
+
+  let advanceAmount = finalTotal;
+  let remainingBalance = 0;
+  if (selectedPayment === 'cod') {
+    const codPercent = currentSettings.codAdvancePercent || 20;
+    advanceAmount = Math.round((finalTotal * codPercent) / 100);
+    remainingBalance = finalTotal - advanceAmount;
+  }
+
+  const formData = new FormData();
+  formData.append('customerName', name);
+  formData.append('email', email);
+  formData.append('phone', phone);
+  formData.append('address', address);
+  formData.append('cityDistrict', district);
+  formData.append('productName', currentProduct.name);
+  formData.append('productImage', currentProduct.image || '');
+  formData.append('woodSpec', currentProduct.woodSpec || '');
+  formData.append('fabricSpec', currentProduct.fabricSpec || '');
+  formData.append('trimSpec', currentProduct.trimSpec || '');
+  formData.append('customMessage', notes);
+  formData.append('subtotal', subtotal);
+  formData.append('deliveryDistanceKm', km);
+  formData.append('deliveryRatePerKm', currentSettings.deliveryRatePerKm || 100);
+  formData.append('deliveryFee', deliveryFee);
+  formData.append('paymentMethod', selectedPayment);
+  formData.append('cardDiscountPercent', cardDiscountPercent);
+  formData.append('discountAmount', discountAmount);
+  formData.append('totalPrice', finalTotal);
+  formData.append('advanceAmount', advanceAmount);
+  formData.append('remainingBalance', remainingBalance);
+  formData.append('maskedCard', maskedCard);
+
+  if (uploadedReceiptFile) {
+    formData.append('receipt', uploadedReceiptFile);
+  }
+
+  try {
+    const res = await fetch('/api/orders', {
+      method: 'POST',
+      body: formData
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to place order');
+
+    const cleanOrderId = (data.orderId || 'LAN-REF').substring(0, 10).toUpperCase();
+
+    // Show Confirmation
+    document.getElementById('displayOrderId').textContent = `#${cleanOrderId}`;
+    document.getElementById('modalProdName').textContent = currentProduct.name;
+    document.getElementById('modalPayMethod').textContent = 
+      selectedPayment === 'card' ? 'Credit/Debit Card (10% Discount Applied)' : 
+      (selectedPayment === 'cod' ? 'Cash on Delivery (Advance Deposit)' : 'Direct Bank Deposit');
+    document.getElementById('modalTotal').textContent = `Rs. ${finalTotal.toLocaleString()}`;
+
+    // WhatsApp Message
+    const waText = encodeURIComponent(
+      `Hello Lansakara Furniture Concierge! I have placed order #${cleanOrderId} for ${currentProduct.name}.\nTotal: Rs. ${finalTotal.toLocaleString()} (${selectedPayment.toUpperCase()}). Please confirm crafting schedule.`
+    );
+    document.getElementById('whatsappDirectLink').href = `https://wa.me/94771234567?text=${waText}`;
+
+    document.getElementById('successModal').classList.add('open');
+    localStorage.removeItem('lansakara_checkout_order');
+
+  } catch (err) {
+    alert(`Order submission error: ${err.message}`);
+    btn.disabled = false;
+    btn.innerHTML = `<i class="fas fa-lock"></i> Confirm & Place Bespoke Order`;
+  }
+}
+</script>
+
+</body>
+</html>
