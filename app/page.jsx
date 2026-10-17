@@ -100,8 +100,12 @@ const initialProducts = [
 export default function HomePage() {
     const router = useRouter();
 
+    // Preloader State
+    const [preloaderHidden, setPreloaderHidden] = useState(false);
+
     // Hero Carousel
     const [heroIndex, setHeroIndex] = useState(0);
+    const [heroKey, setHeroKey] = useState(0);
 
     // Products Filtering & Dynamic Sync
     const [activeCategory, setActiveCategory] = useState('all');
@@ -143,40 +147,56 @@ export default function HomePage() {
     });
     const [contactSuccess, setContactSuccess] = useState(false);
 
-    // Mobile Menu
+    // Mobile Menu & Scroll
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [isScrolled, setIsScrolled] = useState(false);
 
-    // Cursor coordinates
-    const [mousePos, setMousePos] = useState({ x: -100, y: -100 });
-    const [ringPos, setRingPos] = useState({ x: -100, y: -100 });
-
     // ─── EFFECTS ──────────────────────────────────────────
 
-    // Custom Cursor tracking
+    // 1. Preloader Auto-dismiss
     useEffect(() => {
+        const timer = setTimeout(() => {
+            setPreloaderHidden(true);
+        }, 1300);
+        return () => clearTimeout(timer);
+    }, []);
+
+    // 2. Custom Cursor Tracking (Direct DOM + Spring Lag RAF for silky 120fps performance)
+    useEffect(() => {
+        const dot = document.getElementById('cursorDot');
+        const ring = document.getElementById('cursorRing');
+        if (!dot || !ring) return;
+
+        let mouseX = -100;
+        let mouseY = -100;
+        let ringX = -100;
+        let ringY = -100;
+        let animId;
+
         const handleMouseMove = (e) => {
-            setMousePos({ x: e.clientX, y: e.clientY });
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+            dot.style.left = mouseX + 'px';
+            dot.style.top = mouseY + 'px';
         };
         window.addEventListener('mousemove', handleMouseMove);
 
-        let animationFrameId;
         const animateRing = () => {
-            setRingPos((prev) => ({
-                x: prev.x + (mousePos.x - prev.x) * 0.15,
-                y: prev.y + (mousePos.y - prev.y) * 0.15
-            }));
-            animationFrameId = requestAnimationFrame(animateRing);
+            ringX += (mouseX - ringX) * 0.15;
+            ringY += (mouseY - ringY) * 0.15;
+            ring.style.left = ringX + 'px';
+            ring.style.top = ringY + 'px';
+            animId = requestAnimationFrame(animateRing);
         };
-        animationFrameId = requestAnimationFrame(animateRing);
+        animId = requestAnimationFrame(animateRing);
 
         return () => {
             window.removeEventListener('mousemove', handleMouseMove);
-            cancelAnimationFrame(animationFrameId);
+            cancelAnimationFrame(animId);
         };
-    }, [mousePos.x, mousePos.y]);
+    }, []);
 
-    // Navbar scroll & back to top
+    // 3. Navbar scroll & back to top
     useEffect(() => {
         const handleScroll = () => {
             setIsScrolled(window.scrollY > 60);
@@ -193,12 +213,83 @@ export default function HomePage() {
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
-    // Hero Carousel Timer
+    // 4. Floating Golden Particles Generator (35 Golden Particles)
+    useEffect(() => {
+        const container = document.getElementById('heroParticles');
+        if (container && container.childElementCount === 0) {
+            for (let i = 0; i < 35; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
+                particle.style.left = Math.random() * 100 + '%';
+                const size = Math.random() * 4 + 2;
+                particle.style.width = size + 'px';
+                particle.style.height = size + 'px';
+                particle.style.animationDelay = (Math.random() * 8) + 's';
+                particle.style.animationDuration = (Math.random() * 6 + 6) + 's';
+                container.appendChild(particle);
+            }
+        }
+    }, []);
+
+    // 5. Hero 10-Second Countdown Carousel Timer
     useEffect(() => {
         const timer = setInterval(() => {
             setHeroIndex((prev) => (prev + 1) % heroSlides.length);
+            setHeroKey((prev) => prev + 1);
         }, 10000);
         return () => clearInterval(timer);
+    }, [heroKey]);
+
+    // 6. Scroll Reveal Observer (Slide & Fade in elements as user scrolls)
+    useEffect(() => {
+        const revealElements = document.querySelectorAll('.reveal, .reveal-left, .reveal-right');
+        const revealObserver = new IntersectionObserver(
+            (entries) => {
+                entries.forEach((e) => {
+                    if (e.isIntersecting) {
+                        e.target.classList.add('active');
+                    }
+                });
+            },
+            { threshold: 0.12 }
+        );
+
+        revealElements.forEach((el) => revealObserver.observe(el));
+        return () => revealObserver.disconnect();
+    }, [adminProducts]);
+
+    // 7. Stats Counter Animation (Counts up from 0 to target when scrolled into view)
+    useEffect(() => {
+        const statNumbers = document.querySelectorAll('.stat-number');
+        let counted = false;
+        const statsObserver = new IntersectionObserver(
+            (entries) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting && !counted) {
+                        counted = true;
+                        statNumbers.forEach((num) => {
+                            const target = parseInt(num.getAttribute('data-target') || '0', 10);
+                            if (!target) return;
+                            let current = 0;
+                            const step = Math.ceil(target / 60);
+                            const interval = setInterval(() => {
+                                current += step;
+                                if (current >= target) {
+                                    num.textContent = target.toLocaleString() + (target >= 100 && target !== 100 ? '+' : (target === 100 ? '%' : '+'));
+                                    clearInterval(interval);
+                                } else {
+                                    num.textContent = current.toLocaleString();
+                                }
+                            }, 25);
+                        });
+                    }
+                });
+            },
+            { threshold: 0.3 }
+        );
+
+        statNumbers.forEach((s) => statsObserver.observe(s));
+        return () => statsObserver.disconnect();
     }, []);
 
     // Check localStorage for prior review
@@ -262,9 +353,20 @@ export default function HomePage() {
 
     // ─── ACTIONS ──────────────────────────────────────────
 
-    const nextHeroSlide = () => setHeroIndex((prev) => (prev + 1) % heroSlides.length);
-    const prevHeroSlide = () => setHeroIndex((prev) => (prev - 1 + heroSlides.length) % heroSlides.length);
-    const setHeroSlide = (idx) => setHeroIndex(idx);
+    const nextHeroSlide = () => {
+        setHeroIndex((prev) => (prev + 1) % heroSlides.length);
+        setHeroKey((prev) => prev + 1);
+    };
+
+    const prevHeroSlide = () => {
+        setHeroIndex((prev) => (prev - 1 + heroSlides.length) % heroSlides.length);
+        setHeroKey((prev) => prev + 1);
+    };
+
+    const setHeroSlide = (idx) => {
+        setHeroIndex(idx);
+        setHeroKey((prev) => prev + 1);
+    };
 
     const filterCategory = (cat) => {
         setActiveCategory(cat);
@@ -401,17 +503,16 @@ export default function HomePage() {
 
     return (
         <div>
+            {/* Preloader */}
+            <div className={`preloader ${preloaderHidden ? 'hidden' : ''}`} id="preloader">
+                <div className="preloader-logo">Lansakara</div>
+                <div className="preloader-sub">Bespoke Furniture Artistry</div>
+                <div className="preloader-bar"></div>
+            </div>
+
             {/* Custom Cursor */}
-            <div
-                className="cursor-dot"
-                id="cursorDot"
-                style={{ left: `${mousePos.x}px`, top: `${mousePos.y}px` }}
-            ></div>
-            <div
-                className="cursor-ring"
-                id="cursorRing"
-                style={{ left: `${ringPos.x}px`, top: `${ringPos.y}px` }}
-            ></div>
+            <div className="cursor-dot" id="cursorDot"></div>
+            <div className="cursor-ring" id="cursorRing"></div>
 
             {/* Top Navigation */}
             <nav className={`navbar ${isScrolled ? 'scrolled' : ''}`} id="navbar">
@@ -510,7 +611,10 @@ export default function HomePage() {
                                 className={`hero-progress-pill ${i === heroIndex ? 'active' : ''}`}
                                 onClick={() => setHeroSlide(i)}
                             >
-                                <div className="hero-progress-fill"></div>
+                                <div
+                                    key={`${i}-${i === heroIndex ? heroKey : 'idle'}`}
+                                    className="hero-progress-fill"
+                                ></div>
                             </div>
                         ))}
                     </div>
@@ -524,7 +628,7 @@ export default function HomePage() {
             {/* About Section with Collage */}
             <section className="section about" id="about">
                 <div className="about-grid">
-                    <div className="about-collage reveal-left active">
+                    <div className="about-collage reveal-left">
                         <div className="about-collage-img tall">
                             <img src="/images/wood_15.jpg" alt="Modern Wooden Wall Panel Architecture" />
                         </div>
@@ -540,7 +644,7 @@ export default function HomePage() {
                         </div>
                     </div>
 
-                    <div className="about-text reveal-right active">
+                    <div className="about-text reveal-right">
                         <div className="section-label">Heritage & Mastery</div>
                         <h3>The Living Art of <span style={{ color: 'var(--wood-amber)', fontStyle: 'italic' }}>Bespoke Woodworking</span></h3>
                         <p>
@@ -577,7 +681,7 @@ export default function HomePage() {
 
             {/* Products Section (Filterable Showcase) */}
             <section className="section products" id="products">
-                <div className="section-header reveal active">
+                <div className="section-header reveal">
                     <div className="section-label">Signature Creations</div>
                     <h2 className="section-title">Handcrafted Wood Collection</h2>
                     <p className="section-desc">
@@ -585,7 +689,7 @@ export default function HomePage() {
                     </p>
                 </div>
 
-                <div className="products-filter reveal active">
+                <div className="products-filter reveal">
                     <button
                         className={`filter-btn ${activeCategory === 'all' ? 'active' : ''}`}
                         onClick={() => filterCategory('all')}
@@ -624,7 +728,7 @@ export default function HomePage() {
                         const show = activeCategory === 'all' || p.category === activeCategory;
                         if (!show) return null;
                         return (
-                            <div key={p.id} className="product-card reveal active" data-category={p.category}>
+                            <div key={p.id} className="product-card reveal" data-category={p.category}>
                                 <div className="product-thumb">
                                     <img src={p.img} alt={p.name} />
                                     {p.badge && <div className="product-badge-tag">{p.badge}</div>}
@@ -666,7 +770,7 @@ export default function HomePage() {
                         const specText = p.shortDescription || p.woodType || p.dimensions || p.category || 'Handcrafted Solid Timber';
                         const priceNum = p.price || 0;
                         return (
-                            <div key={p._id} className="product-card reveal active" data-category={cat}>
+                            <div key={p._id} className="product-card reveal" data-category={cat}>
                                 <div className="product-thumb">
                                     <img
                                         src={img}
@@ -710,7 +814,7 @@ export default function HomePage() {
                 <div className="craft-banner-bg">
                     <img src="/images/wood_24.jpg" alt="Craftsmanship Texture" />
                 </div>
-                <div className="craft-banner-content reveal active">
+                <div className="craft-banner-content reveal">
                     <div className="section-label" style={{ color: 'var(--gold)' }}>Uncompromising Passion</div>
                     <h2>Every Piece Tells a Century-Old Tale</h2>
                     <p>
@@ -722,7 +826,7 @@ export default function HomePage() {
 
             {/* Masonry Art Gallery (Artwork & Details) */}
             <section className="section gallery" id="gallery">
-                <div className="section-header reveal active">
+                <div className="section-header reveal">
                     <div className="section-label">Visual Inspiration</div>
                     <h2 className="section-title">The Artistry of Grain & Form</h2>
                     <p className="section-desc">
@@ -731,49 +835,49 @@ export default function HomePage() {
                 </div>
 
                 <div className="masonry-grid">
-                    <div className="masonry-item w-2 h-2 reveal active">
+                    <div className="masonry-item w-2 h-2 reveal">
                         <img src="/images/wood_06.jpg" alt="Organic Table Creations" />
                         <div className="masonry-overlay">
                             <h4>Organic Table Creations</h4>
                             <p>Fluid Form live edge sculptures</p>
                         </div>
                     </div>
-                    <div className="masonry-item h-2 reveal active">
+                    <div className="masonry-item h-2 reveal">
                         <img src="/images/wood_02.jpg" alt="Sculpted Monolith Bench" />
                         <div className="masonry-overlay">
                             <h4>Monolithic Timber Bench</h4>
                             <p>Hand-carved organic contours</p>
                         </div>
                     </div>
-                    <div className="masonry-item reveal active">
+                    <div className="masonry-item reveal">
                         <img src="/images/wood_16.jpg" alt="Live Edge Rustic Centerpiece" />
                         <div className="masonry-overlay">
                             <h4>Reclaimed Centerpiece</h4>
                             <p>Farmhouse natural wood art</p>
                         </div>
                     </div>
-                    <div className="masonry-item reveal active">
+                    <div className="masonry-item reveal">
                         <img src="/images/wood_08.jpg" alt="Elvarenne Black Solid Wood Table" />
                         <div className="masonry-overlay">
                             <h4>Elvarenne Charcoal Table</h4>
                             <p>Sumi-e inspired finish</p>
                         </div>
                     </div>
-                    <div className="masonry-item w-2 reveal active">
+                    <div className="masonry-item w-2 reveal">
                         <img src="/images/wood_26.jpg" alt="Timeless Honest Materials" />
                         <div className="masonry-overlay">
                             <h4>Honest Raw Materials</h4>
                             <p>Subtle grain textures and oil finish</p>
                         </div>
                     </div>
-                    <div className="masonry-item reveal active">
+                    <div className="masonry-item reveal">
                         <img src="/images/wood_18.jpg" alt="Rustic Eco Tables" />
                         <div className="masonry-overlay">
                             <h4>Eco-Friendly Rustic</h4>
                             <p>Sustainably reclaimed timber</p>
                         </div>
                     </div>
-                    <div className="masonry-item reveal active">
+                    <div className="masonry-item reveal">
                         <img src="/images/wood_29.jpg" alt="Decor Stand Pedestal" />
                         <div className="masonry-overlay">
                             <h4>Minimalist Timber Pedestal</h4>
@@ -785,7 +889,7 @@ export default function HomePage() {
 
             {/* Why Us & Features */}
             <section className="section features" id="features">
-                <div className="section-header reveal active">
+                <div className="section-header reveal">
                     <div className="section-label">The Lansakara Standard</div>
                     <h2 className="section-title">Why Connoisseurs Choose Us</h2>
                     <p className="section-desc">
@@ -794,22 +898,22 @@ export default function HomePage() {
                 </div>
 
                 <div className="features-grid">
-                    <div className="feature-card reveal active">
+                    <div className="feature-card reveal">
                         <div className="feature-icon">🌳</div>
                         <h4>Sustainably Sourced</h4>
                         <p>Only aged, reclaimed, or certified timber from responsibly managed forests.</p>
                     </div>
-                    <div className="feature-card reveal active">
+                    <div className="feature-card reveal">
                         <div className="feature-icon">📐</div>
                         <h4>Bespoke Tailoring</h4>
                         <p>Every dimension, edge profile, and wood tone tailored precisely to your floor plan.</p>
                     </div>
-                    <div className="feature-card reveal active">
+                    <div className="feature-card reveal">
                         <div className="feature-icon">🛡️</div>
                         <h4>Lifetime Guarantee</h4>
                         <p>Heirloom-grade craftsmanship backed by our multigenerational warranty.</p>
                     </div>
-                    <div className="feature-card reveal active">
+                    <div className="feature-card reveal">
                         <div className="feature-icon">🚚</div>
                         <h4>White Glove Delivery</h4>
                         <p>Direct doorstep placement and installation by our experienced in-house crew.</p>
@@ -820,20 +924,20 @@ export default function HomePage() {
             {/* Stats */}
             <section className="stats">
                 <div className="stats-grid">
-                    <div className="stat-item reveal active">
-                        <div className="stat-number">3,200+</div>
+                    <div className="stat-item reveal">
+                        <div className="stat-number" data-target="3200">0</div>
                         <div className="stat-label">Bespoke Works Crafted</div>
                     </div>
-                    <div className="stat-item reveal active">
-                        <div className="stat-number">28+</div>
+                    <div className="stat-item reveal">
+                        <div className="stat-number" data-target="28">0</div>
                         <div className="stat-label">Years of Heritage</div>
                     </div>
-                    <div className="stat-item reveal active">
-                        <div className="stat-number">100%</div>
+                    <div className="stat-item reveal">
+                        <div className="stat-number" data-target="100">0</div>
                         <div className="stat-label">Solid Hardwood</div>
                     </div>
-                    <div className="stat-item reveal active">
-                        <div className="stat-number">24+</div>
+                    <div className="stat-item reveal">
+                        <div className="stat-number" data-target="24">0</div>
                         <div className="stat-label">Design Accolades</div>
                     </div>
                 </div>
@@ -841,7 +945,7 @@ export default function HomePage() {
 
             {/* Testimonials Slider & Patron Reviews */}
             <section className="section testimonials" id="testimonials">
-                <div className="section-header reveal active">
+                <div className="section-header reveal">
                     <div className="section-label">Patron Reflections</div>
                     <h2 className="section-title">Treasured in Every Home</h2>
                     <div className="reviews-summary-bar" id="reviewsSummaryBar">
@@ -863,7 +967,7 @@ export default function HomePage() {
                     </div>
                 </div>
 
-                <div className="slider-controls-wrap reveal active">
+                <div className="slider-controls-wrap reveal">
                     <button
                         className="slider-arrow-btn slider-arrow-prev"
                         onClick={() => setActiveReviewIdx((prev) => (prev - 1 + reviews.length) % reviews.length)}
@@ -1051,7 +1155,7 @@ export default function HomePage() {
 
             {/* Contact & Bespoke Commission Form */}
             <section className="section contact" id="contact">
-                <div className="section-header reveal active">
+                <div className="section-header reveal">
                     <div className="section-label">Commission Your Piece</div>
                     <h2 className="section-title">Let’s Create Something Eternal</h2>
                     <p className="section-desc">
@@ -1060,7 +1164,7 @@ export default function HomePage() {
                 </div>
 
                 <div className="contact-grid">
-                    <div className="contact-info reveal-left active">
+                    <div className="contact-info reveal-left">
                         <h3>Visit Our Studio Workshop</h3>
                         <p>
                             Walk through our workshop, smell the fragrant sawdust of natural teak and cedar, and select the exact timber slab for your custom masterpiece.
@@ -1099,7 +1203,7 @@ export default function HomePage() {
                         </div>
                     </div>
 
-                    <form className="contact-form reveal-right active" id="bespokeForm" onSubmit={handleFormSubmit}>
+                    <form className="contact-form reveal-right" id="bespokeForm" onSubmit={handleFormSubmit}>
                         <div className="form-row">
                             <div className="form-group">
                                 <input

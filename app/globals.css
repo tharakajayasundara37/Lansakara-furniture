@@ -719,9 +719,14 @@
             border-radius: 2px;
         }
 
+        @keyframes heroFillAnim {
+            0% { width: 0%; }
+            100% { width: 100%; }
+        }
+
         .hero-progress-pill.active .hero-progress-fill {
             width: 100%;
-            transition: width 10s linear;
+            animation: heroFillAnim 10s linear forwards;
         }
 
         .hero-caption-pill {
