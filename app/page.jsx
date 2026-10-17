@@ -514,32 +514,51 @@ export default function HomePage() {
             <div className="cursor-dot" id="cursorDot"></div>
             <div className="cursor-ring" id="cursorRing"></div>
 
-            {/* Top Navigation */}
+            {/* Top Navigation (Modern Floating Capsule & Circular Glass Actions) */}
             <nav className={`navbar ${isScrolled ? 'scrolled' : ''}`} id="navbar">
                 <div className="navbar-container">
                     <a href="#home" className="nav-logo">
                         <span className="logo-icon">⚜</span>
                         Lansakara <span>Furniture</span>
                     </a>
-                    <ul className={`nav-links ${mobileMenuOpen ? 'open' : ''}`} id="navLinks">
-                        <li><a href="#home" className="nav-link" onClick={() => setMobileMenuOpen(false)}>Home</a></li>
-                        <li><a href="#about" className="nav-link" onClick={() => setMobileMenuOpen(false)}>Story</a></li>
-                        <li><a href="#3d-chair" className="nav-link nav-highlight" onClick={() => setMobileMenuOpen(false)}>🪑 3D Studio</a></li>
-                        <li><a href="#products" className="nav-link" onClick={() => setMobileMenuOpen(false)}>Products</a></li>
-                        <li><a href="#gallery" className="nav-link" onClick={() => setMobileMenuOpen(false)}>Art Gallery</a></li>
-                        <li><a href="#testimonials" className="nav-link" onClick={() => setMobileMenuOpen(false)}>Reviews</a></li>
-                        <li><Link href="/checkout" className="nav-link" onClick={() => setMobileMenuOpen(false)}>Checkout</Link></li>
-                        <li><Link href="/admin" className="nav-link" style={{ color: 'var(--gold)' }} onClick={() => setMobileMenuOpen(false)}>Login</Link></li>
-                        <li className="mobile-only">
-                            <a href="#contact" className="nav-cta-mobile" onClick={() => setMobileMenuOpen(false)}>
-                                Custom Order
-                            </a>
-                        </li>
-                    </ul>
+
+                    {/* Floating Center Capsule Bar */}
+                    <div className="nav-capsule-wrapper">
+                        <ul className={`nav-links ${mobileMenuOpen ? 'open' : ''}`} id="navLinks">
+                            <li><a href="#home" className="nav-link" onClick={() => setMobileMenuOpen(false)}>Home</a></li>
+                            <li><a href="#about" className="nav-link" onClick={() => setMobileMenuOpen(false)}>Story</a></li>
+                            <li>
+                                <a href="#3d-chair" className="nav-link nav-highlight" onClick={() => setMobileMenuOpen(false)}>
+                                    <span className="live-dot-nav"></span> 3D Studio
+                                </a>
+                            </li>
+                            <li><a href="#products" className="nav-link" onClick={() => setMobileMenuOpen(false)}>Products</a></li>
+                            <li><a href="#gallery" className="nav-link" onClick={() => setMobileMenuOpen(false)}>Art Gallery</a></li>
+                            <li><a href="#testimonials" className="nav-link" onClick={() => setMobileMenuOpen(false)}>Reviews</a></li>
+                            <li className="mobile-only"><Link href="/checkout" className="nav-link" onClick={() => setMobileMenuOpen(false)}>Checkout</Link></li>
+                            <li className="mobile-only"><Link href="/admin" className="nav-link" onClick={() => setMobileMenuOpen(false)}>Login</Link></li>
+                            <li className="mobile-only">
+                                <a href="#contact" className="nav-cta-mobile" onClick={() => setMobileMenuOpen(false)}>
+                                    Custom Order
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+
+                    {/* Right Circular Glass Action Buttons + CTA */}
                     <div className="nav-actions">
-                        <a href="#contact" className="nav-cta-btn">Custom Order</a>
+                        <a href="#contact" className="nav-circle-btn" title="Studio Showroom & Location">
+                            <i className="fas fa-map-marker-alt"></i>
+                        </a>
+                        <Link href="/checkout" className="nav-circle-btn" title="Bespoke Checkout (10% Card Discount)">
+                            <i className="fas fa-shopping-bag"></i>
+                        </Link>
+                        <Link href="/admin" className="nav-circle-btn" title="Artisan Login">
+                            <i className="fas fa-user"></i>
+                        </Link>
+                        <a href="#contact" className="nav-cta-pill">Custom Order</a>
                         <button
-                            className="menu-toggle"
+                            className={`menu-toggle ${mobileMenuOpen ? 'active' : ''}`}
                             id="menuToggle"
                             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                             aria-label="Toggle navigation"
