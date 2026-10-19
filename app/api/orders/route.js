@@ -4,6 +4,9 @@ import { verifyAdminToken } from '@/backend/authHelper';
 import fs from 'fs';
 import path from 'path';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function GET(request) {
   const auth = verifyAdminToken(request);
   if (!auth.valid) {
@@ -32,13 +35,23 @@ export async function POST(request) {
       for (const [key, value] of formData.entries()) {
         if (key === 'receipt' && value instanceof File && value.size > 0) {
           const buffer = Buffer.from(await value.arrayBuffer());
-          const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'receipts');
-          if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+          const mimeType = value.type || 'image/jpeg';
+          try {
+            const isServerless = process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME;
+            if (!isServerless) {
+              const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'receipts');
+              if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 
-          const ext = path.extname(value.name) || '.jpg';
-          const filename = 'receipt_' + Date.now() + '_' + Math.round(Math.random() * 1e6) + ext;
-          fs.writeFileSync(path.join(uploadDir, filename), buffer);
-          receiptImage = '/uploads/receipts/' + filename;
+              const ext = path.extname(value.name) || '.jpg';
+              const filename = 'receipt_' + Date.now() + '_' + Math.round(Math.random() * 1e6) + ext;
+              fs.writeFileSync(path.join(uploadDir, filename), buffer);
+              receiptImage = '/uploads/receipts/' + filename;
+            } else {
+              receiptImage = `data:${mimeType};base64,${buffer.toString('base64')}`;
+            }
+          } catch (e) {
+            receiptImage = `data:${mimeType};base64,${buffer.toString('base64')}`;
+          }
         } else if (typeof value === 'string') {
           body[key] = value;
         }

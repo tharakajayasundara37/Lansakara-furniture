@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import storage from '@/backend/storage';
 import { verifyAdminToken } from '@/backend/authHelper';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function GET() {
   try {
     const settings = await storage.getSettings();

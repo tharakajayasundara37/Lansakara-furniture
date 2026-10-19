@@ -3,8 +3,12 @@ const path = require('path');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
-const DATA_DIR = path.join(__dirname, 'data');
-const DATA_FILE = path.join(DATA_DIR, 'local_db.json');
+const isServerless = !!(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
+const BUNDLED_DATA_DIR = path.join(process.cwd(), 'backend', 'data');
+const BUNDLED_DATA_FILE = path.join(BUNDLED_DATA_DIR, 'local_db.json');
+
+const DATA_DIR = isServerless ? '/tmp' : BUNDLED_DATA_DIR;
+const DATA_FILE = isServerless ? path.join('/tmp', 'local_db.json') : BUNDLED_DATA_FILE;
 
 // Initial seed products from the website
 const INITIAL_PRODUCTS = [
@@ -211,9 +215,17 @@ const INITIAL_REVIEWS = [
 
 function initLocalDb() {
   if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
+    try { fs.mkdirSync(DATA_DIR, { recursive: true }); } catch (e) {}
   }
   if (!fs.existsSync(DATA_FILE)) {
+    if (isServerless && fs.existsSync(BUNDLED_DATA_FILE)) {
+      try {
+        fs.copyFileSync(BUNDLED_DATA_FILE, DATA_FILE);
+        return;
+      } catch (e) {
+        console.warn('Could not copy bundled local_db to /tmp:', e.message);
+      }
+    }
     const adminPasswordHash = bcrypt.hashSync(process.env.ADMIN_PASSWORD || 'lansakara2026', 10);
     const initialData = {
       products: INITIAL_PRODUCTS,
@@ -257,7 +269,11 @@ function initLocalDb() {
         }
       ]
     };
-    fs.writeFileSync(DATA_FILE, JSON.stringify(initialData, null, 2), 'utf8');
+    try {
+      fs.writeFileSync(DATA_FILE, JSON.stringify(initialData, null, 2), 'utf8');
+    } catch (e) {
+      console.warn('Could not write initial local_db:', e.message);
+    }
   }
 }
 
@@ -266,7 +282,7 @@ function readLocalDb() {
   try {
     const raw = fs.readFileSync(DATA_FILE, 'utf8');
     const db = JSON.parse(raw);
-    if (!db.reviews || db.reviews.length === 0) {
+    if (!Array.isArray(db.reviews)) {
       db.reviews = [...INITIAL_REVIEWS];
       writeLocalDb(db);
     }
@@ -749,7 +765,7 @@ async function createReview(data) {
     return await review.save();
   } else {
     const db = readLocalDb();
-    if (!db.reviews) db.reviews = [...INITIAL_REVIEWS];
+    if (!Array.isArray(db.reviews)) db.reviews = [];
     const newRev = {
       _id: 'rev_' + Date.now(),
       ...reviewData
@@ -761,11 +777,13 @@ async function createReview(data) {
 }
 
 async function deleteReview(id) {
+  if (!id) return null;
+  const targetId = String(id).trim();
   if (isMongoConnected()) {
-    return await ReviewModel.findByIdAndDelete(id);
+    return await ReviewModel.findByIdAndDelete(targetId);
   } else {
     const db = readLocalDb();
-    const idx = (db.reviews || []).findIndex(r => r._id === id || r.id === id);
+    const idx = (db.reviews || []).findIndex(r => String(r._id).trim() === targetId || String(r.id || '').trim() === targetId);
     if (idx === -1) return null;
     const deleted = db.reviews.splice(idx, 1)[0];
     writeLocalDb(db);

@@ -9,6 +9,7 @@ export default function AdminPage() {
     const [token, setToken] = useState(null);
     const [loginUsername, setLoginUsername] = useState('');
     const [loginPassword, setLoginPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [loginError, setLoginError] = useState('');
     const [loggingIn, setLoggingIn] = useState(false);
 
@@ -326,17 +327,22 @@ export default function AdminPage() {
                     method: 'DELETE',
                     headers: getAuthHeaders()
                 });
+                const data = await res.json().catch(() => ({}));
                 if (res.ok) {
-                    setReviews((prev) => prev.filter((r) => r._id !== reviewId));
+                    setReviews((prev) => prev.filter((r) => r._id !== reviewId && r.id !== reviewId));
+                } else {
+                    alert('Could not delete review: ' + (data.error || 'Server error'));
                 }
             } else {
-                // In dual storage, delete or update status
                 const res = await fetch(`/api/reviews/${reviewId}`, {
                     method: 'DELETE',
                     headers: getAuthHeaders()
                 });
+                const data = await res.json().catch(() => ({}));
                 if (res.ok) {
-                    setReviews((prev) => prev.filter((r) => r._id !== reviewId));
+                    setReviews((prev) => prev.filter((r) => r._id !== reviewId && r.id !== reviewId));
+                } else {
+                    alert('Could not update review: ' + (data.error || 'Server error'));
                 }
             }
         } catch (err) {
@@ -363,49 +369,99 @@ export default function AdminPage() {
     // ──────────────────────────────────────────
     if (!token) {
         return (
-            <div id="loginPage" style={{ display: 'flex' }}>
-                <div className="login-card">
-                    <div className="login-logo">
-                        <div className="brand">LANSAKARA</div>
-                        <div className="sub">Artisan Admin Portal</div>
+            <div id="loginPage">
+                <div className="login-overlay"></div>
+                <div className="login-card glass-panel">
+                    <div className="login-crest">
+                        <div className="crest-badge">
+                            <i className="fas fa-shield-halved"></i>
+                        </div>
+                        <span className="crest-tag">MASTER ARTISAN PORTAL</span>
                     </div>
 
-                    {loginError && <div className="login-error" style={{ display: 'block' }}>{loginError}</div>}
+                    <div className="login-header">
+                        <h1 className="brand-title">LANSAKARA</h1>
+                        <p className="brand-subtitle">Atelier Administration & Control</p>
+                    </div>
 
-                    <form onSubmit={handleLogin}>
-                        <div className="form-group">
-                            <label>Username</label>
-                            <input
-                                type="text"
-                                className="form-control"
-                                placeholder="Enter admin username"
-                                required
-                                value={loginUsername}
-                                onChange={(e) => setLoginUsername(e.target.value)}
-                            />
+                    {loginError && (
+                        <div className="login-error-alert" role="alert">
+                            <i className="fas fa-circle-exclamation"></i>
+                            <span>{loginError}</span>
+                        </div>
+                    )}
+
+                    <form onSubmit={handleLogin} className="login-form">
+                        <div className="login-field-group">
+                            <label htmlFor="adminUsername">Artisan ID / Username</label>
+                            <div className="input-icon-wrapper">
+                                <span className="input-icon-box">
+                                    <i className="fas fa-user-shield"></i>
+                                </span>
+                                <input
+                                    id="adminUsername"
+                                    type="text"
+                                    className="glass-input"
+                                    placeholder="Enter authorized username"
+                                    required
+                                    autoComplete="username"
+                                    value={loginUsername}
+                                    onChange={(e) => setLoginUsername(e.target.value)}
+                                />
+                            </div>
                         </div>
 
-                        <div className="form-group">
-                            <label>Password</label>
-                            <input
-                                type="password"
-                                className="form-control"
-                                placeholder="Enter password"
-                                required
-                                value={loginPassword}
-                                onChange={(e) => setLoginPassword(e.target.value)}
-                            />
+                        <div className="login-field-group">
+                            <label htmlFor="adminPassword">Master Passphrase</label>
+                            <div className="input-icon-wrapper">
+                                <span className="input-icon-box">
+                                    <i className="fas fa-lock"></i>
+                                </span>
+                                <input
+                                    id="adminPassword"
+                                    type={showPassword ? 'text' : 'password'}
+                                    className="glass-input"
+                                    placeholder="Enter security key"
+                                    required
+                                    autoComplete="current-password"
+                                    value={loginPassword}
+                                    onChange={(e) => setLoginPassword(e.target.value)}
+                                />
+                                <button
+                                    type="button"
+                                    className="password-toggle-btn"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                                >
+                                    <i className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                                </button>
+                            </div>
                         </div>
 
                         <button type="submit" className="btn-login" disabled={loggingIn}>
-                            {loggingIn ? 'Authenticating...' : 'Sign In to Portal'}
+                            {loggingIn ? (
+                                <>
+                                    <i className="fas fa-spinner fa-spin"></i>
+                                    <span>Verifying Master Credentials...</span>
+                                </>
+                            ) : (
+                                <>
+                                    <span>Sign In to Portal</span>
+                                    <i className="fas fa-arrow-right"></i>
+                                </>
+                            )}
                         </button>
                     </form>
 
-                    <div style={{ marginTop: '24px', textAlign: 'center' }}>
-                        <Link href="/" style={{ fontSize: '12px', color: 'var(--gold)', textDecoration: 'none' }}>
-                            ← Back to Lansakara Public Atelier
+                    <div className="login-footer">
+                        <Link href="/" className="back-atelier-link">
+                            <i className="fas fa-arrow-left-long"></i>
+                            <span>Return to Lansakara Public Atelier</span>
                         </Link>
+                        <div className="security-note">
+                            <i className="fas fa-lock"></i>
+                            <span>256-Bit Encrypted Master Session</span>
+                        </div>
                     </div>
                 </div>
             </div>
