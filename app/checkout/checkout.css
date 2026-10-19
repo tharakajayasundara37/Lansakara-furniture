@@ -1581,6 +1581,22 @@ body {
 
 /* ─── RESPONSIVE RULES ───────────────────────────────── */
 @media (max-width: 820px) {
+  .checkout-container {
+    padding: 0 16px 60px;
+    margin: 20px auto;
+  }
+  .c-card {
+    padding: 20px 16px;
+    border-radius: 14px;
+  }
+  .cert-schedule-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 6px;
+  }
+  .cert-table {
+    min-width: 520px;
+  }
   .cert-dossier-grid,
   .cert-financials-block {
     grid-template-columns: 1fr;
@@ -1594,21 +1610,31 @@ body {
 }
 
 @media (max-width: 540px) {
+  .checkout-container {
+    padding: 0 12px 60px;
+    margin: 14px auto;
+  }
+  .page-heading {
+    font-size: 24px;
+  }
+  .c-card {
+    padding: 16px 12px;
+  }
   .cert-inner-frame {
-    padding: 16px 14px;
+    padding: 16px 12px;
   }
   .cert-atelier-name {
-    font-size: 20px;
-    letter-spacing: 2px;
+    font-size: 19px;
+    letter-spacing: 1.5px;
   }
   .cert-document-title {
-    font-size: 14px;
-    letter-spacing: 1.5px;
-    padding: 6px 10px;
+    font-size: 13px;
+    letter-spacing: 1.2px;
+    padding: 5px 8px;
   }
   .cert-endorsement-section {
     grid-template-columns: 1fr;
-    gap: 20px;
+    gap: 18px;
   }
   .atelier-seal-wrapper {
     order: -1;
