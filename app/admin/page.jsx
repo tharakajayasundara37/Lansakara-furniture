@@ -5,7 +5,9 @@ import Link from 'next/link';
 import './admin.css';
 
 export default function AdminPage() {
-    // Auth State
+    // ──────────────────────────────────────────
+    // AUTH STATE
+    // ──────────────────────────────────────────
     const [token, setToken] = useState(null);
     const [loginUsername, setLoginUsername] = useState('');
     const [loginPassword, setLoginPassword] = useState('');
@@ -13,10 +15,17 @@ export default function AdminPage() {
     const [loginError, setLoginError] = useState('');
     const [loggingIn, setLoggingIn] = useState(false);
 
+    // ──────────────────────────────────────────
+    // NAVIGATION & SHELL STATE
+    // ──────────────────────────────────────────
     // Active Section: 'dashboard' | 'products' | 'orders' | 'settings' | 'reviews'
     const [activeSection, setActiveSection] = useState('dashboard');
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [currentTime, setCurrentTime] = useState('');
 
-    // Data States
+    // ──────────────────────────────────────────
+    // DATA STATES
+    // ──────────────────────────────────────────
     const [stats, setStats] = useState({
         totalOrders: 0,
         pendingOrders: 0,
@@ -40,11 +49,17 @@ export default function AdminPage() {
         }
     });
 
-    // Orders Filter
+    // ──────────────────────────────────────────
+    // FILTERS & SEARCH
+    // ──────────────────────────────────────────
     const [orderFilter, setOrderFilter] = useState('all');
     const [orderSearch, setOrderSearch] = useState('');
+    const [productCategoryFilter, setProductCategoryFilter] = useState('all');
+    const [productSearch, setProductSearch] = useState('');
 
-    // Modals
+    // ──────────────────────────────────────────
+    // MODALS & FORMS
+    // ──────────────────────────────────────────
     const [slipModalUrl, setSlipModalUrl] = useState(null);
     const [showProductModal, setShowProductModal] = useState(false);
     const [editingProduct, setEditingProduct] = useState(null);
@@ -56,7 +71,7 @@ export default function AdminPage() {
         shortDescription: '',
         description: '',
         woodType: 'Solid Teak',
-        badge: '',
+        badge: 'New Arrival',
         featured: false,
         inStock: true
     });
@@ -65,7 +80,9 @@ export default function AdminPage() {
     const [savingSettings, setSavingSettings] = useState(false);
     const [settingsNotice, setSettingsNotice] = useState('');
 
-    // Check token on mount
+    // ──────────────────────────────────────────
+    // MOUNT & CLOCK EFFECTS
+    // ──────────────────────────────────────────
     useEffect(() => {
         if (typeof window !== 'undefined') {
             const saved = sessionStorage.getItem('lansakara_admin_token');
@@ -73,6 +90,19 @@ export default function AdminPage() {
                 setToken(saved);
             }
         }
+        const updateClock = () => {
+            const now = new Date();
+            setCurrentTime(now.toLocaleDateString('en-US', {
+                weekday: 'short',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            }));
+        };
+        updateClock();
+        const interval = setInterval(updateClock, 30000);
+        return () => clearInterval(interval);
     }, []);
 
     // Load data when authenticated
@@ -128,7 +158,9 @@ export default function AdminPage() {
         }
     };
 
-    // Handle Login
+    // ──────────────────────────────────────────
+    // HANDLERS
+    // ──────────────────────────────────────────
     const handleLogin = async (e) => {
         e.preventDefault();
         setLoginError('');
@@ -163,7 +195,6 @@ export default function AdminPage() {
         }
     };
 
-    // Handle Logout
     const handleLogout = () => {
         setToken(null);
         if (typeof window !== 'undefined') {
@@ -171,7 +202,6 @@ export default function AdminPage() {
         }
     };
 
-    // Update Order Status
     const handleUpdateOrderStatus = async (orderId, newStatus) => {
         try {
             const res = await fetch(`/api/orders/${orderId}/status`, {
@@ -195,7 +225,6 @@ export default function AdminPage() {
         }
     };
 
-    // Delete Order
     const handleDeleteOrder = async (orderId) => {
         if (!confirm(`Are you sure you want to permanently delete order #${orderId}?`)) return;
 
@@ -215,7 +244,6 @@ export default function AdminPage() {
         }
     };
 
-    // Save Settings
     const handleSaveSettings = async (e) => {
         e.preventDefault();
         setSavingSettings(true);
@@ -233,8 +261,8 @@ export default function AdminPage() {
 
             const data = await res.json();
             if (res.ok) {
-                setSettingsNotice('✓ Settings & Pricing successfully updated!');
-                setTimeout(() => setSettingsNotice(''), 3000);
+                setSettingsNotice('✓ Atelier Settings & Commercial Pricing published successfully!');
+                setTimeout(() => setSettingsNotice(''), 3500);
             } else {
                 alert(data.error || 'Failed to update settings');
             }
@@ -245,7 +273,6 @@ export default function AdminPage() {
         }
     };
 
-    // Save Product (Create or Edit)
     const handleSaveProduct = async (e) => {
         e.preventDefault();
         setSavingProduct(true);
@@ -298,7 +325,6 @@ export default function AdminPage() {
         }
     };
 
-    // Delete Product
     const handleDeleteProduct = async (productId, prodName) => {
         if (!confirm(`Are you sure you want to delete "${prodName}" from the catalog?`)) return;
 
@@ -318,7 +344,6 @@ export default function AdminPage() {
         }
     };
 
-    // Review Actions
     const handleReviewAction = async (reviewId, action) => {
         try {
             if (action === 'delete') {
@@ -333,24 +358,13 @@ export default function AdminPage() {
                 } else {
                     alert('Could not delete review: ' + (data.error || 'Server error'));
                 }
-            } else {
-                const res = await fetch(`/api/reviews/${reviewId}`, {
-                    method: 'DELETE',
-                    headers: getAuthHeaders()
-                });
-                const data = await res.json().catch(() => ({}));
-                if (res.ok) {
-                    setReviews((prev) => prev.filter((r) => r._id !== reviewId && r.id !== reviewId));
-                } else {
-                    alert('Could not update review: ' + (data.error || 'Server error'));
-                }
             }
         } catch (err) {
             alert('Error updating review: ' + err.message);
         }
     };
 
-    // Filtered orders
+    // Filtered lists
     const filteredOrders = orders.filter((o) => {
         if (orderFilter !== 'all' && o.status !== orderFilter) return false;
         if (orderSearch.trim()) {
@@ -364,8 +378,27 @@ export default function AdminPage() {
         return true;
     });
 
+    const filteredProducts = products.filter((p) => {
+        if (productCategoryFilter !== 'all' && p.category !== productCategoryFilter) return false;
+        if (productSearch.trim()) {
+            const q = productSearch.toLowerCase();
+            const matchName = (p.name || '').toLowerCase().includes(q);
+            const matchWood = (p.woodType || '').toLowerCase().includes(q);
+            return matchName || matchWood;
+        }
+        return true;
+    });
+
+    // Helper for initials avatar
+    const getInitials = (name) => {
+        if (!name) return 'AT';
+        const parts = name.trim().split(/\s+/);
+        if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+        return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    };
+
     // ──────────────────────────────────────────
-    // IF NOT AUTHENTICATED: RENDER LOGIN SCREEN
+    // IF NOT AUTHENTICATED: RENDER LUXURY LOGIN
     // ──────────────────────────────────────────
     if (!token) {
         return (
@@ -469,205 +502,326 @@ export default function AdminPage() {
     }
 
     // ──────────────────────────────────────────
-    // AUTHENTICATED: RENDER FULL ADMIN DASHBOARD
+    // AUTHENTICATED: RENDER MASTER DASHBOARD
     // ──────────────────────────────────────────
     return (
-        <div id="mainApp" style={{ display: 'flex' }}>
-            {/* Sidebar */}
-            <aside className="sidebar">
+        <div id="mainApp">
+            {/* Mobile Sidebar Backdrop */}
+            <div
+                className={`sidebar-mobile-backdrop ${mobileMenuOpen ? 'open' : ''}`}
+                onClick={() => setMobileMenuOpen(false)}
+            />
+
+            {/* ─── SIDEBAR ─────────────────────────────────────── */}
+            <aside className={`admin-sidebar ${mobileMenuOpen ? 'mobile-open' : ''}`}>
                 <div className="sidebar-header">
-                    <div className="sidebar-brand">LANSAKARA</div>
-                    <div className="sidebar-sub">Royal Woodcraft Admin</div>
+                    <div className="sidebar-crest-icon">
+                        <i className="fas fa-couch"></i>
+                    </div>
+                    <div className="sidebar-brand-group">
+                        <span className="sidebar-brand-name">LANSAKARA</span>
+                        <span className="sidebar-brand-sub">Royal Woodcraft Atelier</span>
+                    </div>
                 </div>
 
-                <div className="sidebar-nav">
-                    <div className="nav-label">Management</div>
+                <div className="sidebar-status-banner">
+                    <span className="status-dot-pulse">Workshop Online</span>
+                    <span className="status-location-tag">Moratuwa, LK</span>
+                </div>
 
-                    <div
-                        className={`nav-item ${activeSection === 'dashboard' ? 'active' : ''}`}
-                        onClick={() => setActiveSection('dashboard')}
-                    >
-                        <i className="fas fa-th-large"></i> Dashboard
-                    </div>
+                <div className="sidebar-nav-container">
+                    <div className="nav-section-label">Executive Management</div>
 
-                    <div
-                        className={`nav-item ${activeSection === 'products' ? 'active' : ''}`}
-                        onClick={() => setActiveSection('products')}
+                    <button
+                        type="button"
+                        className={`nav-item-btn ${activeSection === 'dashboard' ? 'active' : ''}`}
+                        onClick={() => { setActiveSection('dashboard'); setMobileMenuOpen(false); }}
                     >
-                        <i className="fas fa-couch"></i> Catalog Products
-                    </div>
+                        <i className="fas fa-chart-pie"></i>
+                        <span>Executive Dashboard</span>
+                    </button>
 
-                    <div
-                        className={`nav-item ${activeSection === 'orders' ? 'active' : ''}`}
-                        onClick={() => setActiveSection('orders')}
+                    <button
+                        type="button"
+                        className={`nav-item-btn ${activeSection === 'products' ? 'active' : ''}`}
+                        onClick={() => { setActiveSection('products'); setMobileMenuOpen(false); }}
                     >
-                        <i className="fas fa-clipboard-list"></i> Bespoke Orders
+                        <i className="fas fa-chair"></i>
+                        <span>Catalog Masterpieces</span>
+                        <span className="nav-item-count">{products.length}</span>
+                    </button>
+
+                    <button
+                        type="button"
+                        className={`nav-item-btn ${activeSection === 'orders' ? 'active' : ''}`}
+                        onClick={() => { setActiveSection('orders'); setMobileMenuOpen(false); }}
+                    >
+                        <i className="fas fa-gem"></i>
+                        <span>Bespoke Patron Orders</span>
                         {stats.pendingOrders > 0 && (
-                            <span className="badge" style={{ display: 'inline-block' }}>
-                                {stats.pendingOrders}
-                            </span>
+                            <span className="nav-item-badge">{stats.pendingOrders}</span>
                         )}
-                    </div>
+                    </button>
 
-                    <div
-                        className={`nav-item ${activeSection === 'settings' ? 'active' : ''}`}
-                        onClick={() => setActiveSection('settings')}
-                    >
-                        <i className="fas fa-sliders-h"></i> Settings & Pricing
-                    </div>
+                    <div className="nav-section-label">Configuration & Feedback</div>
 
-                    <div
-                        className={`nav-item ${activeSection === 'reviews' ? 'active' : ''}`}
-                        onClick={() => setActiveSection('reviews')}
+                    <button
+                        type="button"
+                        className={`nav-item-btn ${activeSection === 'settings' ? 'active' : ''}`}
+                        onClick={() => { setActiveSection('settings'); setMobileMenuOpen(false); }}
                     >
-                        <i className="fas fa-star"></i> Patron Reviews
-                    </div>
+                        <i className="fas fa-sliders"></i>
+                        <span>Pricing & Delivery Rules</span>
+                    </button>
+
+                    <button
+                        type="button"
+                        className={`nav-item-btn ${activeSection === 'reviews' ? 'active' : ''}`}
+                        onClick={() => { setActiveSection('reviews'); setMobileMenuOpen(false); }}
+                    >
+                        <i className="fas fa-star"></i>
+                        <span>Patron Reflections</span>
+                        <span className="nav-item-count">{reviews.length}</span>
+                    </button>
                 </div>
 
                 <div className="sidebar-footer">
-                    <button className="btn-logout" onClick={handleLogout}>
-                        <i className="fas fa-sign-out-alt"></i> Logout Portal
+                    <Link href="/" target="_blank" className="btn-sidebar-secondary">
+                        <i className="fas fa-arrow-up-right-from-square"></i>
+                        <span>View Live Storefront</span>
+                    </Link>
+                    <button type="button" className="btn-logout-portal" onClick={handleLogout}>
+                        <i className="fas fa-right-from-bracket"></i>
+                        <span>Sign Out of Portal</span>
                     </button>
                 </div>
             </aside>
 
-            {/* Main Content Area */}
-            <main className="main-content">
-                {/* Top Bar */}
-                <div className="top-bar">
-                    <h2 className="page-title" style={{ textTransform: 'capitalize' }}>
-                        {activeSection === 'dashboard' && 'Executive Workshop Overview'}
-                        {activeSection === 'products' && 'Catalog & Masterwork Collection'}
-                        {activeSection === 'orders' && 'Bespoke Patron Orders'}
-                        {activeSection === 'settings' && 'Delivery, Discounts & Bank Settings'}
-                        {activeSection === 'reviews' && 'Patron Reviews & Reflections'}
-                    </h2>
-                    <div className="top-bar-right">
-                        <Link href="/" target="_blank" className="nav-item" style={{ fontSize: '12px' }}>
-                            <i className="fas fa-external-link-alt"></i> View Live Atelier
-                        </Link>
-                        <div className="admin-badge">
-                            <i className="fas fa-user-shield" style={{ color: 'var(--gold)', marginRight: '6px' }}></i>
-                            <span>Master Artisan</span>
+            {/* ─── WORKSPACE (TOPBAR & CONTENT) ────────────────── */}
+            <div className="admin-workspace">
+                {/* TOP BAR */}
+                <header className="admin-topbar">
+                    <div className="topbar-left">
+                        <button
+                            type="button"
+                            className="mobile-menu-toggle"
+                            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                            aria-label="Toggle Navigation Menu"
+                        >
+                            <i className="fas fa-bars"></i>
+                        </button>
+                        <div className="topbar-title-group">
+                            <span className="topbar-page-kicker">LANSAKARA ATELIER ADMINISTRATION</span>
+                            <h2 className="topbar-page-title">
+                                {activeSection === 'dashboard' && 'Executive Workshop Overview'}
+                                {activeSection === 'products' && 'Catalog Masterpieces & Furniture Collection'}
+                                {activeSection === 'orders' && 'Bespoke Patron Orders & Inquiries'}
+                                {activeSection === 'settings' && 'Delivery, Discounts & Banking Rules'}
+                                {activeSection === 'reviews' && 'Patron Reflections & Testimonials'}
+                            </h2>
                         </div>
                     </div>
-                </div>
 
-                <div style={{ flex: 1, overflowY: 'auto', padding: '28px' }}>
-                    {/* ═════════ SECTION 1: DASHBOARD ═════════ */}
+                    <div className="topbar-right">
+                        {currentTime && (
+                            <div className="live-clock-badge">
+                                <i className="far fa-clock" style={{ color: 'var(--gold)' }}></i>
+                                <span>{currentTime}</span>
+                            </div>
+                        )}
+                        <div className="admin-profile-pill">
+                            <div className="admin-avatar-circle">
+                                <span>LA</span>
+                            </div>
+                            <div className="admin-info">
+                                <span className="admin-name">Master Artisan</span>
+                                <span className="admin-role">Super Admin</span>
+                            </div>
+                        </div>
+                    </div>
+                </header>
+
+                {/* SCROLLABLE BODY */}
+                <main className="admin-scroll-body">
+                    {/* ═════════ 1. DASHBOARD OVERVIEW ═════════ */}
                     {activeSection === 'dashboard' && (
-                        <div>
-                            {/* Stats Cards */}
-                            <div
-                                style={{
-                                    display: 'grid',
-                                    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                                    gap: '20px',
-                                    marginBottom: '32px'
-                                }}
-                            >
-                                <div style={{ background: 'var(--dark-3)', border: '1px solid var(--border)', padding: '24px', borderRadius: '12px' }}>
-                                    <div style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Total Revenue</div>
-                                    <div style={{ fontSize: '24px', color: 'var(--gold)', fontWeight: 700, marginTop: '8px' }}>
+                        <>
+                            {/* Metric Cards Grid */}
+                            <div className="stats-grid-luxury">
+                                <div className="stat-card-luxury">
+                                    <div className="stat-top-row">
+                                        <span className="stat-title">Workshop Revenue</span>
+                                        <div className="stat-icon-badge stat-icon-gold">
+                                            <i className="fas fa-coins"></i>
+                                        </div>
+                                    </div>
+                                    <div className="stat-number-value highlight-gold">
                                         Rs. {(stats.totalRevenue || 0).toLocaleString()}
                                     </div>
+                                    <div className="stat-footer-tag">
+                                        <i className="fas fa-check-circle" style={{ color: 'var(--emerald)' }}></i>
+                                        <span>Verified Customer Billings</span>
+                                    </div>
                                 </div>
-                                <div style={{ background: 'var(--dark-3)', border: '1px solid var(--border)', padding: '24px', borderRadius: '12px' }}>
-                                    <div style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Bespoke Orders</div>
-                                    <div style={{ fontSize: '24px', color: 'var(--text)', fontWeight: 700, marginTop: '8px' }}>
+
+                                <div className="stat-card-luxury">
+                                    <div className="stat-top-row">
+                                        <span className="stat-title">Bespoke Orders</span>
+                                        <div className="stat-icon-badge stat-icon-blue">
+                                            <i className="fas fa-clipboard-check"></i>
+                                        </div>
+                                    </div>
+                                    <div className="stat-number-value">
                                         {stats.totalOrders || orders.length}
                                     </div>
-                                </div>
-                                <div style={{ background: 'var(--dark-3)', border: '1px solid var(--border)', padding: '24px', borderRadius: '12px' }}>
-                                    <div style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Pending Review</div>
-                                    <div style={{ fontSize: '24px', color: 'var(--orange)', fontWeight: 700, marginTop: '8px' }}>
-                                        {stats.pendingOrders || orders.filter(o => o.status === 'pending').length}
+                                    <div className="stat-footer-tag">
+                                        <i className="fas fa-boxes-stacked" style={{ color: 'var(--blue)' }}></i>
+                                        <span>Active Inquiries & Pipeline</span>
                                     </div>
                                 </div>
-                                <div style={{ background: 'var(--dark-3)', border: '1px solid var(--border)', padding: '24px', borderRadius: '12px' }}>
-                                    <div style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>In Production</div>
-                                    <div style={{ fontSize: '24px', color: 'var(--blue)', fontWeight: 700, marginTop: '8px' }}>
-                                        {stats.inProduction || orders.filter(o => o.status === 'in_production').length}
+
+                                <div className="stat-card-luxury">
+                                    <div className="stat-top-row">
+                                        <span className="stat-title">Pending Review</span>
+                                        <div className="stat-icon-badge stat-icon-amber">
+                                            <i className="fas fa-hourglass-half"></i>
+                                        </div>
+                                    </div>
+                                    <div className="stat-number-value" style={{ color: 'var(--amber)' }}>
+                                        {stats.pendingOrders || orders.filter((o) => o.status === 'pending').length}
+                                    </div>
+                                    <div className="stat-footer-tag">
+                                        <i className="fas fa-bell" style={{ color: 'var(--amber)' }}></i>
+                                        <span>Requires Artisan Action</span>
                                     </div>
                                 </div>
-                                <div style={{ background: 'var(--dark-3)', border: '1px solid var(--border)', padding: '24px', borderRadius: '12px' }}>
-                                    <div style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Catalog Pieces</div>
-                                    <div style={{ fontSize: '24px', color: 'var(--text)', fontWeight: 700, marginTop: '8px' }}>
+
+                                <div className="stat-card-luxury">
+                                    <div className="stat-top-row">
+                                        <span className="stat-title">In Production</span>
+                                        <div className="stat-icon-badge stat-icon-blue">
+                                            <i className="fas fa-hammer"></i>
+                                        </div>
+                                    </div>
+                                    <div className="stat-number-value" style={{ color: 'var(--blue)' }}>
+                                        {stats.inProduction || orders.filter((o) => o.status === 'in_production').length}
+                                    </div>
+                                    <div className="stat-footer-tag">
+                                        <i className="fas fa-screwdriver-wrench"></i>
+                                        <span>On Carpenter Workbench</span>
+                                    </div>
+                                </div>
+
+                                <div className="stat-card-luxury">
+                                    <div className="stat-top-row">
+                                        <span className="stat-title">Catalog Pieces</span>
+                                        <div className="stat-icon-badge stat-icon-emerald">
+                                            <i className="fas fa-couch"></i>
+                                        </div>
+                                    </div>
+                                    <div className="stat-number-value">
                                         {products.length}
+                                    </div>
+                                    <div className="stat-footer-tag">
+                                        <i className="fas fa-globe" style={{ color: 'var(--emerald)' }}></i>
+                                        <span>Published to Showroom</span>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Recent Orders Overview */}
-                            <div style={{ background: 'var(--dark-3)', border: '1px solid var(--border)', borderRadius: '12px', padding: '24px' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                                    <h3 style={{ fontFamily: 'Playfair Display, serif', fontSize: '18px', color: 'var(--gold)' }}>
-                                        Recent Bespoke Inquiries & Orders
-                                    </h3>
+                            {/* Recent Orders Overview Card */}
+                            <div className="atelier-panel-card">
+                                <div className="panel-header-row">
+                                    <div className="panel-title-group">
+                                        <h3 className="panel-title">Recent Bespoke Patron Commissions</h3>
+                                        <span className="panel-subtitle">Latest custom furniture orders placed across Sri Lanka</span>
+                                    </div>
                                     <button
+                                        type="button"
+                                        className="btn-gold-primary"
                                         onClick={() => setActiveSection('orders')}
-                                        style={{ background: 'none', border: 'none', color: 'var(--gold)', cursor: 'pointer', fontSize: '13px' }}
+                                        style={{ padding: '8px 18px', fontSize: '11.5px' }}
                                     >
-                                        View All ({orders.length}) →
+                                        <span>View Complete Order Book ({orders.length})</span>
+                                        <i className="fas fa-arrow-right"></i>
                                     </button>
                                 </div>
 
-                                <div style={{ overflowX: 'auto' }}>
-                                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left' }}>
+                                <div className="table-responsive-container">
+                                    <table className="atelier-data-table">
                                         <thead>
-                                            <tr style={{ borderBottom: '1px solid var(--border)', color: 'var(--text-muted)' }}>
-                                                <th style={{ padding: '12px 16px' }}>Order ID</th>
-                                                <th style={{ padding: '12px 16px' }}>Patron</th>
-                                                <th style={{ padding: '12px 16px' }}>Product</th>
-                                                <th style={{ padding: '12px 16px' }}>Total (Rs.)</th>
-                                                <th style={{ padding: '12px 16px' }}>Method</th>
-                                                <th style={{ padding: '12px 16px' }}>Status</th>
+                                            <tr>
+                                                <th>Order Ref</th>
+                                                <th>Patron</th>
+                                                <th>Masterpiece Piece</th>
+                                                <th>Total Value</th>
+                                                <th>Payment Method</th>
+                                                <th>Production Status</th>
+                                                <th style={{ textAlign: 'right' }}>Direct Connect</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {orders.slice(0, 5).map((o) => (
-                                                <tr key={o._id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                                                    <td style={{ padding: '12px 16px', color: 'var(--gold)', fontWeight: 600 }}>
-                                                        #{(o._id || '').slice(-6).toUpperCase()}
-                                                    </td>
-                                                    <td style={{ padding: '12px 16px' }}>{o.customerName}</td>
-                                                    <td style={{ padding: '12px 16px' }}>{o.productName}</td>
-                                                    <td style={{ padding: '12px 16px', fontWeight: 600 }}>
-                                                        Rs. {(o.totalPrice || 0).toLocaleString()}
-                                                    </td>
-                                                    <td style={{ padding: '12px 16px', textTransform: 'capitalize' }}>
-                                                        {o.paymentMethod || 'card'}
-                                                    </td>
-                                                    <td style={{ padding: '12px 16px' }}>
-                                                        <span
-                                                            style={{
-                                                                padding: '4px 10px',
-                                                                borderRadius: '12px',
-                                                                fontSize: '11px',
-                                                                textTransform: 'uppercase',
-                                                                background:
-                                                                    o.status === 'delivered'
-                                                                        ? 'rgba(76,175,80,0.15)'
-                                                                        : o.status === 'in_production'
-                                                                            ? 'rgba(66,165,245,0.15)'
-                                                                            : 'rgba(255,152,0,0.15)',
-                                                                color:
-                                                                    o.status === 'delivered'
-                                                                        ? 'var(--green)'
-                                                                        : o.status === 'in_production'
-                                                                            ? 'var(--blue)'
-                                                                            : 'var(--orange)'
-                                                            }}
-                                                        >
-                                                            {(o.status || 'pending').replace('_', ' ')}
+                                            {orders.slice(0, 6).map((o) => (
+                                                <tr key={o._id}>
+                                                    <td>
+                                                        <span className="ref-hash-pill">
+                                                            #{(o._id || '').slice(-6).toUpperCase()}
                                                         </span>
+                                                    </td>
+                                                    <td>
+                                                        <div className="patron-cell-group">
+                                                            <div className="patron-avatar-initials">
+                                                                {getInitials(o.customerName)}
+                                                            </div>
+                                                            <div className="patron-details-stack">
+                                                                <span className="patron-name">{o.customerName}</span>
+                                                                <span className="patron-meta-sub">{o.phone}</span>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <div style={{ fontWeight: 600 }}>{o.productName}</div>
+                                                        <span style={{ fontSize: '11px', color: 'var(--gold)' }}>
+                                                            {o.woodSpec || 'Solid Hardwood'}
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        <span style={{ fontWeight: 700, color: 'var(--gold-light)' }}>
+                                                            Rs. {(o.totalPrice || 0).toLocaleString()}
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        <span className="payment-badge-pill">
+                                                            <i className="fas fa-credit-card" style={{ fontSize: '10px' }}></i>
+                                                            {(o.paymentMethod || 'card').replace('_', ' ')}
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        <span className={`status-pill-badge status-${o.status || 'pending'}`}>
+                                                            ● {(o.status || 'pending').replace(/_/g, ' ')}
+                                                        </span>
+                                                    </td>
+                                                    <td style={{ textAlign: 'right' }}>
+                                                        <a
+                                                            href={`https://wa.me/${(o.phone || '').replace(/[^0-9]/g, '')}?text=Hello%20${encodeURIComponent(o.customerName)},%20this%20is%20Lansakara%20Artisans%20regarding%20your%20bespoke%20order%20%23${(o._id || '').slice(-6).toUpperCase()}.`}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="btn-action-circle btn-action-whatsapp"
+                                                            title="Direct WhatsApp with Patron"
+                                                        >
+                                                            <i className="fab fa-whatsapp"></i>
+                                                        </a>
                                                     </td>
                                                 </tr>
                                             ))}
                                             {orders.length === 0 && (
                                                 <tr>
-                                                    <td colSpan="6" style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)' }}>
-                                                        No orders received yet.
+                                                    <td colSpan="7">
+                                                        <div className="empty-state-luxury">
+                                                            <i className="fas fa-inbox empty-state-icon"></i>
+                                                            <h4 className="empty-state-title">No Bespoke Orders Yet</h4>
+                                                            <p className="empty-state-sub">New commission requests submitted from the atelier will appear here instantly.</p>
+                                                        </div>
                                                     </td>
                                                 </tr>
                                             )}
@@ -675,17 +829,20 @@ export default function AdminPage() {
                                     </table>
                                 </div>
                             </div>
-                        </div>
+                        </>
                     )}
 
-                    {/* ═════════ SECTION 2: PRODUCTS ═════════ */}
+                    {/* ═════════ 2. CATALOG PRODUCTS ═════════ */}
                     {activeSection === 'products' && (
-                        <div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                                <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>
-                                    Manage solid wood products displayed on the public catalog with full CRUD & image uploads.
-                                </p>
+                        <div className="atelier-panel-card">
+                            <div className="panel-header-row">
+                                <div className="panel-title-group">
+                                    <h3 className="panel-title">Catalog Masterpieces & Showroom Pieces</h3>
+                                    <span className="panel-subtitle">Manage handcrafted timber products with high-resolution imagery and specifications</span>
+                                </div>
                                 <button
+                                    type="button"
+                                    className="btn-gold-primary"
                                     onClick={() => {
                                         setEditingProduct(null);
                                         setProductForm({
@@ -702,394 +859,132 @@ export default function AdminPage() {
                                         });
                                         setShowProductModal(true);
                                     }}
-                                    style={{
-                                        background: 'linear-gradient(135deg, var(--gold-dark), var(--gold))',
-                                        color: '#000',
-                                        border: 'none',
-                                        padding: '10px 18px',
-                                        borderRadius: '8px',
-                                        fontWeight: 600,
-                                        cursor: 'pointer'
-                                    }}
                                 >
-                                    <i className="fas fa-plus"></i> Add New Masterpiece
+                                    <i className="fas fa-plus"></i>
+                                    <span>Add Masterpiece Piece</span>
                                 </button>
                             </div>
 
-                            <div style={{ background: 'var(--dark-3)', border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden' }}>
-                                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left' }}>
+                            {/* Search & Category Filter Toolbar */}
+                            <div className="controls-toolbar">
+                                <div className="search-input-box">
+                                    <i className="fas fa-search"></i>
+                                    <input
+                                        type="text"
+                                        className="search-input-field"
+                                        placeholder="Search by piece title or timber species..."
+                                        value={productSearch}
+                                        onChange={(e) => setProductSearch(e.target.value)}
+                                    />
+                                </div>
+
+                                <div className="filter-pills-row">
+                                    {['all', 'dining', 'living', 'tables', 'bedroom'].map((cat) => (
+                                        <button
+                                            key={cat}
+                                            type="button"
+                                            className={`filter-pill-btn ${productCategoryFilter === cat ? 'active' : ''}`}
+                                            onClick={() => setProductCategoryFilter(cat)}
+                                        >
+                                            <span>{cat === 'all' ? 'All Collections' : cat}</span>
+                                            <span className="pill-count-badge">
+                                                {cat === 'all'
+                                                    ? products.length
+                                                    : products.filter((p) => p.category === cat).length}
+                                            </span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Products Table */}
+                            <div className="table-responsive-container">
+                                <table className="atelier-data-table">
                                     <thead>
-                                        <tr style={{ borderBottom: '1px solid var(--border)', color: 'var(--text-muted)', background: 'var(--dark-4)' }}>
-                                            <th style={{ padding: '14px 18px' }}>Thumbnail</th>
-                                            <th style={{ padding: '14px 18px' }}>Product Name</th>
-                                            <th style={{ padding: '14px 18px' }}>Category</th>
-                                            <th style={{ padding: '14px 18px' }}>Timber Spec</th>
-                                            <th style={{ padding: '14px 18px' }}>Price (Rs.)</th>
-                                            <th style={{ padding: '14px 18px' }}>Badge</th>
-                                            <th style={{ padding: '14px 18px', textAlign: 'right' }}>Actions</th>
+                                        <tr>
+                                            <th>Artwork Preview</th>
+                                            <th>Masterpiece Name</th>
+                                            <th>Category</th>
+                                            <th>Timber Specification</th>
+                                            <th>Catalog Price</th>
+                                            <th>Badge Pill</th>
+                                            <th style={{ textAlign: 'right' }}>Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {products.map((p) => {
+                                        {filteredProducts.map((p) => {
                                             const thumb = p.images && p.images[0] ? p.images[0] : '/images/wood_09.jpg';
                                             return (
-                                                <tr key={p._id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                                                    <td style={{ padding: '14px 18px' }}>
+                                                <tr key={p._id}>
+                                                    <td>
                                                         <img
                                                             src={thumb}
                                                             alt={p.name}
-                                                            style={{ width: '48px', height: '48px', objectFit: 'cover', borderRadius: '6px', border: '1px solid var(--border)' }}
+                                                            className="table-product-thumb"
                                                             onError={(e) => { e.currentTarget.src = '/images/wood_09.jpg'; }}
                                                         />
                                                     </td>
-                                                    <td style={{ padding: '14px 18px', fontWeight: 600 }}>{p.name}</td>
-                                                    <td style={{ padding: '14px 18px', textTransform: 'uppercase', fontSize: '11px', color: 'var(--text-muted)' }}>
-                                                        {p.category}
+                                                    <td>
+                                                        <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{p.name}</div>
+                                                        <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                                                            {p.shortDescription || 'Heirloom Artisan Joinery'}
+                                                        </span>
                                                     </td>
-                                                    <td style={{ padding: '14px 18px', color: 'var(--text-muted)' }}>
-                                                        {p.woodType || p.shortDescription}
+                                                    <td>
+                                                        <span className="payment-badge-pill" style={{ textTransform: 'uppercase' }}>
+                                                            {p.category}
+                                                        </span>
                                                     </td>
-                                                    <td style={{ padding: '14px 18px', color: 'var(--gold)', fontWeight: 600 }}>
-                                                        Rs. {(p.price || 0).toLocaleString()}
+                                                    <td>
+                                                        <span style={{ color: 'var(--gold-light)' }}>
+                                                            {p.woodType || 'Solid Ceylon Hardwood'}
+                                                        </span>
                                                     </td>
-                                                    <td style={{ padding: '14px 18px' }}>
-                                                        {p.badge && (
-                                                            <span style={{ background: 'rgba(212,175,55,0.15)', color: 'var(--gold)', padding: '3px 8px', borderRadius: '10px', fontSize: '11px' }}>
+                                                    <td>
+                                                        <span style={{ fontWeight: 700, color: 'var(--gold)' }}>
+                                                            Rs. {(p.price || 0).toLocaleString()}
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        {p.badge ? (
+                                                            <span style={{
+                                                                background: 'rgba(212,175,55,0.15)',
+                                                                color: 'var(--gold-light)',
+                                                                border: '1px solid var(--gold-border)',
+                                                                padding: '3px 8px',
+                                                                borderRadius: '8px',
+                                                                fontSize: '11px',
+                                                                fontWeight: 600
+                                                            }}>
                                                                 {p.badge}
                                                             </span>
+                                                        ) : (
+                                                            <span style={{ color: 'var(--text-muted)', fontSize: '11px' }}>—</span>
                                                         )}
                                                     </td>
-                                                    <td style={{ padding: '14px 18px', textAlign: 'right' }}>
-                                                        <button
-                                                            onClick={() => handleDeleteProduct(p._id, p.name)}
-                                                            style={{ background: 'rgba(239,83,80,0.15)', border: '1px solid rgba(239,83,80,0.3)', color: '#EF9A9A', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}
-                                                        >
-                                                            <i className="fas fa-trash"></i> Delete
-                                                        </button>
+                                                    <td style={{ textAlign: 'right' }}>
+                                                        <div className="action-buttons-group">
+                                                            <button
+                                                                type="button"
+                                                                className="btn-action-circle btn-action-delete"
+                                                                onClick={() => handleDeleteProduct(p._id, p.name)}
+                                                                title={`Delete ${p.name}`}
+                                                            >
+                                                                <i className="fas fa-trash-can"></i>
+                                                            </button>
+                                                        </div>
                                                     </td>
                                                 </tr>
                                             );
                                         })}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* ═════════ SECTION 3: ORDERS ═════════ */}
-                    {activeSection === 'orders' && (
-                        <div>
-                            {/* Filter bar */}
-                            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '20px', alignItems: 'center' }}>
-                                <input
-                                    type="text"
-                                    placeholder="Search by patron name, phone, order ID..."
-                                    style={{ background: 'var(--dark-3)', border: '1px solid var(--border)', padding: '10px 16px', borderRadius: '8px', color: '#fff', minWidth: '260px' }}
-                                    value={orderSearch}
-                                    onChange={(e) => setOrderSearch(e.target.value)}
-                                />
-
-                                {['all', 'pending', 'in_production', 'ready_for_delivery', 'delivered', 'cancelled'].map((st) => (
-                                    <button
-                                        key={st}
-                                        onClick={() => setOrderFilter(st)}
-                                        style={{
-                                            background: orderFilter === st ? 'rgba(201,168,76,0.2)' : 'var(--dark-3)',
-                                            color: orderFilter === st ? 'var(--gold)' : 'var(--text-muted)',
-                                            border: '1px solid var(--border)',
-                                            padding: '8px 14px',
-                                            borderRadius: '6px',
-                                            cursor: 'pointer',
-                                            fontSize: '12px',
-                                            textTransform: 'capitalize'
-                                        }}
-                                    >
-                                        {st.replace('_', ' ')}
-                                    </button>
-                                ))}
-                            </div>
-
-                            {/* Orders Table */}
-                            <div style={{ background: 'var(--dark-3)', border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden' }}>
-                                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left' }}>
-                                    <thead>
-                                        <tr style={{ borderBottom: '1px solid var(--border)', color: 'var(--text-muted)', background: 'var(--dark-4)' }}>
-                                            <th style={{ padding: '14px 18px' }}>Order Ref</th>
-                                            <th style={{ padding: '14px 18px' }}>Patron</th>
-                                            <th style={{ padding: '14px 18px' }}>Piece & Details</th>
-                                            <th style={{ padding: '14px 18px' }}>Delivery Destination</th>
-                                            <th style={{ padding: '14px 18px' }}>Total (Rs.)</th>
-                                            <th style={{ padding: '14px 18px' }}>Payment</th>
-                                            <th style={{ padding: '14px 18px' }}>Status Update</th>
-                                            <th style={{ padding: '14px 18px', textAlign: 'right' }}>Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {filteredOrders.map((o) => (
-                                            <tr key={o._id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                                                <td style={{ padding: '14px 18px', color: 'var(--gold)', fontWeight: 600 }}>
-                                                    #{(o._id || '').slice(-6).toUpperCase()}
-                                                </td>
-                                                <td style={{ padding: '14px 18px' }}>
-                                                    <div style={{ fontWeight: 600 }}>{o.customerName}</div>
-                                                    <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{o.phone}</div>
-                                                    <div style={{ fontSize: '11px', color: 'var(--text-dim)' }}>{o.email}</div>
-                                                </td>
-                                                <td style={{ padding: '14px 18px' }}>
-                                                    <div style={{ fontWeight: 500 }}>{o.productName}</div>
-                                                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                                                        {o.woodSpec ? `Wood: ${o.woodSpec}` : ''}
-                                                    </div>
-                                                </td>
-                                                <td style={{ padding: '14px 18px' }}>
-                                                    <div>{o.cityDistrict}</div>
-                                                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{o.address}</div>
-                                                    <div style={{ fontSize: '11px', color: 'var(--gold)' }}>{o.deliveryDistanceKm} km</div>
-                                                </td>
-                                                <td style={{ padding: '14px 18px', fontWeight: 600 }}>
-                                                    Rs. {(o.totalPrice || 0).toLocaleString()}
-                                                </td>
-                                                <td style={{ padding: '14px 18px' }}>
-                                                    <span style={{ textTransform: 'capitalize' }}>
-                                                        {(o.paymentMethod || 'card').replace('_', ' ')}
-                                                    </span>
-                                                    {o.receiptUrl && (
-                                                        <div style={{ marginTop: '4px' }}>
-                                                            <button
-                                                                onClick={() => setSlipModalUrl(o.receiptUrl)}
-                                                                style={{ background: 'none', border: 'none', color: 'var(--blue)', cursor: 'pointer', fontSize: '11px', textDecoration: 'underline' }}
-                                                            >
-                                                                <i className="fas fa-file-invoice"></i> View Slip
-                                                            </button>
-                                                        </div>
-                                                    )}
-                                                </td>
-                                                <td style={{ padding: '14px 18px' }}>
-                                                    <select
-                                                        value={o.status || 'pending'}
-                                                        onChange={(e) => handleUpdateOrderStatus(o._id, e.target.value)}
-                                                        style={{ background: 'var(--dark-4)', color: '#fff', border: '1px solid var(--border)', borderRadius: '6px', padding: '6px 10px', fontSize: '12px' }}
-                                                    >
-                                                        <option value="pending">Pending</option>
-                                                        <option value="in_production">In Production</option>
-                                                        <option value="ready_for_delivery">Ready for Delivery</option>
-                                                        <option value="delivered">Delivered</option>
-                                                        <option value="cancelled">Cancelled</option>
-                                                    </select>
-                                                </td>
-                                                <td style={{ padding: '14px 18px', textAlign: 'right' }}>
-                                                    <a
-                                                        href={`https://wa.me/${(o.phone || '').replace(/[^0-9]/g, '')}?text=Hello%20${encodeURIComponent(o.customerName)},%20this%20is%20Lansakara%20Artisans%20regarding%20your%20bespoke%20order%20%23${(o._id || '').slice(-6).toUpperCase()}.`}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        style={{ background: 'rgba(37,211,102,0.15)', color: '#25D366', border: '1px solid rgba(37,211,102,0.3)', padding: '6px 10px', borderRadius: '6px', marginRight: '6px', textDecoration: 'none', display: 'inline-block', fontSize: '12px' }}
-                                                    >
-                                                        <i className="fab fa-whatsapp"></i>
-                                                    </a>
-                                                    <button
-                                                        onClick={() => handleDeleteOrder(o._id)}
-                                                        style={{ background: 'rgba(239,83,80,0.15)', border: '1px solid rgba(239,83,80,0.3)', color: '#EF9A9A', padding: '6px 10px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}
-                                                    >
-                                                        <i className="fas fa-trash"></i>
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* ═════════ SECTION 4: SETTINGS & PRICING ═════════ */}
-                    {activeSection === 'settings' && (
-                        <div style={{ maxWidth: '800px', background: 'var(--dark-3)', border: '1px solid var(--border)', borderRadius: '12px', padding: '32px' }}>
-                            <h3 style={{ fontFamily: 'Playfair Display, serif', fontSize: '20px', color: 'var(--gold)', marginBottom: '16px' }}>
-                                Store Pricing & Commission Configurations
-                            </h3>
-
-                            {settingsNotice && (
-                                <div style={{ background: 'rgba(76,175,80,0.2)', border: '1px solid var(--green)', color: 'var(--green)', padding: '12px 16px', borderRadius: '8px', marginBottom: '20px' }}>
-                                    {settingsNotice}
-                                </div>
-                            )}
-
-                            <form onSubmit={handleSaveSettings}>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '24px' }}>
-                                    <div>
-                                        <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase' }}>
-                                            Online Card Discount (%)
-                                        </label>
-                                        <input
-                                            type="number"
-                                            min="0"
-                                            max="50"
-                                            className="form-control"
-                                            value={settings.cardDiscountPercent}
-                                            onChange={(e) => setSettings({ ...settings, cardDiscountPercent: parseFloat(e.target.value) || 0 })}
-                                        />
-                                        <span style={{ fontSize: '11px', color: 'var(--text-dim)', marginTop: '4px', display: 'block' }}>
-                                            Applied immediately upon selecting Credit/Debit Card.
-                                        </span>
-                                    </div>
-
-                                    <div>
-                                        <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase' }}>
-                                            Delivery Rate per km (Rs.)
-                                        </label>
-                                        <input
-                                            type="number"
-                                            min="0"
-                                            className="form-control"
-                                            value={settings.deliveryRatePerKm}
-                                            onChange={(e) => setSettings({ ...settings, deliveryRatePerKm: parseFloat(e.target.value) || 0 })}
-                                        />
-                                        <span style={{ fontSize: '11px', color: 'var(--text-dim)', marginTop: '4px', display: 'block' }}>
-                                            Charged per kilometer from the Moratuwa atelier.
-                                        </span>
-                                    </div>
-                                </div>
-
-                                <div style={{ marginBottom: '24px' }}>
-                                    <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase' }}>
-                                        COD Advance Deposit (%)
-                                    </label>
-                                    <input
-                                        type="number"
-                                        min="0"
-                                        max="90"
-                                        className="form-control"
-                                        value={settings.codAdvancePercent}
-                                        onChange={(e) => setSettings({ ...settings, codAdvancePercent: parseFloat(e.target.value) || 0 })}
-                                    />
-                                    <span style={{ fontSize: '11px', color: 'var(--text-dim)', marginTop: '4px', display: 'block' }}>
-                                        Minimum upfront transfer required for Cash-on-Delivery bespoke commissions.
-                                    </span>
-                                </div>
-
-                                <h4 style={{ color: 'var(--gold)', fontSize: '15px', marginBottom: '16px', borderTop: '1px solid var(--border)', paddingTop: '20px' }}>
-                                    Bank Transfer Details (Displayed on Checkout)
-                                </h4>
-
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '24px' }}>
-                                    <div>
-                                        <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '8px' }}>Bank Name</label>
-                                        <input
-                                            type="text"
-                                            className="form-control"
-                                            value={settings.bankDetails?.bankName || ''}
-                                            onChange={(e) => setSettings({
-                                                ...settings,
-                                                bankDetails: { ...settings.bankDetails, bankName: e.target.value }
-                                            })}
-                                        />
-                                    </div>
-                                    <div>
-                                        <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '8px' }}>Account Name</label>
-                                        <input
-                                            type="text"
-                                            className="form-control"
-                                            value={settings.bankDetails?.accountName || ''}
-                                            onChange={(e) => setSettings({
-                                                ...settings,
-                                                bankDetails: { ...settings.bankDetails, accountName: e.target.value }
-                                            })}
-                                        />
-                                    </div>
-                                    <div>
-                                        <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '8px' }}>Account Number</label>
-                                        <input
-                                            type="text"
-                                            className="form-control"
-                                            value={settings.bankDetails?.accountNumber || ''}
-                                            onChange={(e) => setSettings({
-                                                ...settings,
-                                                bankDetails: { ...settings.bankDetails, accountNumber: e.target.value }
-                                            })}
-                                        />
-                                    </div>
-                                    <div>
-                                        <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '8px' }}>Branch</label>
-                                        <input
-                                            type="text"
-                                            className="form-control"
-                                            value={settings.bankDetails?.branch || ''}
-                                            onChange={(e) => setSettings({
-                                                ...settings,
-                                                bankDetails: { ...settings.bankDetails, branch: e.target.value }
-                                            })}
-                                        />
-                                    </div>
-                                </div>
-
-                                <button
-                                    type="submit"
-                                    disabled={savingSettings}
-                                    style={{
-                                        background: 'linear-gradient(135deg, var(--gold-dark), var(--gold))',
-                                        color: '#000',
-                                        border: 'none',
-                                        padding: '12px 24px',
-                                        borderRadius: '8px',
-                                        fontWeight: 600,
-                                        cursor: 'pointer'
-                                    }}
-                                >
-                                    {savingSettings ? 'Saving...' : 'Save & Publish Settings'}
-                                </button>
-                            </form>
-                        </div>
-                    )}
-
-                    {/* ═════════ SECTION 5: REVIEWS ═════════ */}
-                    {activeSection === 'reviews' && (
-                        <div>
-                            <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginBottom: '20px' }}>
-                                Verified patron reflections submitted from the public homepage. Each patron is limited to 1 review.
-                            </p>
-
-                            <div style={{ background: 'var(--dark-3)', border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden' }}>
-                                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left' }}>
-                                    <thead>
-                                        <tr style={{ borderBottom: '1px solid var(--border)', color: 'var(--text-muted)', background: 'var(--dark-4)' }}>
-                                            <th style={{ padding: '14px 18px' }}>Patron</th>
-                                            <th style={{ padding: '14px 18px' }}>Rating</th>
-                                            <th style={{ padding: '14px 18px' }}>Location & Piece</th>
-                                            <th style={{ padding: '14px 18px' }}>Review Quote</th>
-                                            <th style={{ padding: '14px 18px', textAlign: 'right' }}>Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {reviews.map((r) => (
-                                            <tr key={r._id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                                                <td style={{ padding: '14px 18px' }}>
-                                                    <div style={{ fontWeight: 600 }}>{r.authorName}</div>
-                                                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{r.authorEmail}</div>
-                                                </td>
-                                                <td style={{ padding: '14px 18px', color: 'var(--gold)' }}>
-                                                    {'★'.repeat(r.rating || 5)}{'☆'.repeat(5 - (r.rating || 5))}
-                                                </td>
-                                                <td style={{ padding: '14px 18px' }}>
-                                                    <div>{r.location || 'Sri Lanka'}</div>
-                                                    <div style={{ fontSize: '11px', color: 'var(--gold)' }}>{r.productPurchased}</div>
-                                                </td>
-                                                <td style={{ padding: '14px 18px', maxWidth: '300px' }}>
-                                                    “{r.quote}”
-                                                </td>
-                                                <td style={{ padding: '14px 18px', textAlign: 'right' }}>
-                                                    <button
-                                                        onClick={() => handleReviewAction(r._id, 'delete')}
-                                                        style={{ background: 'rgba(239,83,80,0.15)', border: '1px solid rgba(239,83,80,0.3)', color: '#EF9A9A', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}
-                                                    >
-                                                        <i className="fas fa-trash"></i> Remove
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                        {reviews.length === 0 && (
+                                        {filteredProducts.length === 0 && (
                                             <tr>
-                                                <td colSpan="5" style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)' }}>
-                                                    No patron reviews registered yet.
+                                                <td colSpan="7">
+                                                    <div className="empty-state-luxury">
+                                                        <i className="fas fa-couch empty-state-icon"></i>
+                                                        <h4 className="empty-state-title">No Masterpieces Found</h4>
+                                                        <p className="empty-state-sub">Try adjusting your category filter or search query to find showroom furniture.</p>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         )}
@@ -1098,47 +993,437 @@ export default function AdminPage() {
                             </div>
                         </div>
                     )}
-                </div>
-            </main>
 
-            {/* ═════════ SLIP PREVIEW MODAL ═════════ */}
+                    {/* ═════════ 3. BESPOKE ORDERS ═════════ */}
+                    {activeSection === 'orders' && (
+                        <div className="atelier-panel-card">
+                            <div className="panel-header-row">
+                                <div className="panel-title-group">
+                                    <h3 className="panel-title">Bespoke Patron Orders & Inquiries</h3>
+                                    <span className="panel-subtitle">Manage client commissions, update crafting milestones, and verify transfer slips</span>
+                                </div>
+                            </div>
+
+                            {/* Toolbar: Search & Order Status Tabs */}
+                            <div className="controls-toolbar">
+                                <div className="search-input-box">
+                                    <i className="fas fa-search"></i>
+                                    <input
+                                        type="text"
+                                        className="search-input-field"
+                                        placeholder="Search by patron name, phone, or order reference..."
+                                        value={orderSearch}
+                                        onChange={(e) => setOrderSearch(e.target.value)}
+                                    />
+                                </div>
+
+                                <div className="filter-pills-row">
+                                    {['all', 'pending', 'in_production', 'ready_for_delivery', 'delivered', 'cancelled'].map((st) => (
+                                        <button
+                                            key={st}
+                                            type="button"
+                                            className={`filter-pill-btn ${orderFilter === st ? 'active' : ''}`}
+                                            onClick={() => setOrderFilter(st)}
+                                        >
+                                            <span>{st.replace(/_/g, ' ')}</span>
+                                            <span className="pill-count-badge">
+                                                {st === 'all'
+                                                    ? orders.length
+                                                    : orders.filter((o) => o.status === st).length}
+                                            </span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Orders Table */}
+                            <div className="table-responsive-container">
+                                <table className="atelier-data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Order Ref</th>
+                                            <th>Patron Credentials</th>
+                                            <th>Piece & Timber</th>
+                                            <th>Destination</th>
+                                            <th>Total (Rs.)</th>
+                                            <th>Payment Method</th>
+                                            <th>Workflow Status</th>
+                                            <th style={{ textAlign: 'right' }}>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {filteredOrders.map((o) => (
+                                            <tr key={o._id}>
+                                                <td>
+                                                    <span className="ref-hash-pill">
+                                                        #{(o._id || '').slice(-6).toUpperCase()}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <div className="patron-cell-group">
+                                                        <div className="patron-avatar-initials">
+                                                            {getInitials(o.customerName)}
+                                                        </div>
+                                                        <div className="patron-details-stack">
+                                                            <span className="patron-name">{o.customerName}</span>
+                                                            <span className="patron-meta-sub">{o.phone}</span>
+                                                            <span style={{ fontSize: '10.5px', color: 'var(--text-dim)' }}>{o.email}</span>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div style={{ fontWeight: 600 }}>{o.productName}</div>
+                                                    <div style={{ fontSize: '11px', color: 'var(--gold)' }}>
+                                                        {o.woodSpec ? `Timber: ${o.woodSpec}` : 'Custom Live-Edge'}
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div style={{ fontWeight: 500 }}>{o.cityDistrict || 'Western Province'}</div>
+                                                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{o.address}</div>
+                                                    {o.deliveryDistanceKm > 0 && (
+                                                        <span style={{ fontSize: '10.5px', color: 'var(--gold-light)' }}>
+                                                            {o.deliveryDistanceKm} km from Moratuwa
+                                                        </span>
+                                                    )}
+                                                </td>
+                                                <td>
+                                                    <span style={{ fontWeight: 700, color: 'var(--gold-light)' }}>
+                                                        Rs. {(o.totalPrice || 0).toLocaleString()}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <div className="payment-badge-pill">
+                                                        {(o.paymentMethod || 'card').replace('_', ' ')}
+                                                    </div>
+                                                    {o.receiptUrl && (
+                                                        <div>
+                                                            <button
+                                                                type="button"
+                                                                className="slip-trigger-btn"
+                                                                onClick={() => setSlipModalUrl(o.receiptUrl)}
+                                                            >
+                                                                <i className="fas fa-file-invoice"></i>
+                                                                <span>View Slip</span>
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                </td>
+                                                <td>
+                                                    <select
+                                                        className="table-status-select"
+                                                        value={o.status || 'pending'}
+                                                        onChange={(e) => handleUpdateOrderStatus(o._id, e.target.value)}
+                                                    >
+                                                        <option value="pending">● Pending</option>
+                                                        <option value="in_production">● In Production</option>
+                                                        <option value="ready_for_delivery">● Ready for Delivery</option>
+                                                        <option value="delivered">● Delivered</option>
+                                                        <option value="cancelled">● Cancelled</option>
+                                                    </select>
+                                                </td>
+                                                <td style={{ textAlign: 'right' }}>
+                                                    <div className="action-buttons-group">
+                                                        <a
+                                                            href={`https://wa.me/${(o.phone || '').replace(/[^0-9]/g, '')}?text=Hello%20${encodeURIComponent(o.customerName)},%20this%20is%20Lansakara%20Artisans%20regarding%20your%20bespoke%20order%20%23${(o._id || '').slice(-6).toUpperCase()}.`}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="btn-action-circle btn-action-whatsapp"
+                                                            title="WhatsApp Customer"
+                                                        >
+                                                            <i className="fab fa-whatsapp"></i>
+                                                        </a>
+                                                        <button
+                                                            type="button"
+                                                            className="btn-action-circle btn-action-delete"
+                                                            onClick={() => handleDeleteOrder(o._id)}
+                                                            title="Delete Order Record"
+                                                        >
+                                                            <i className="fas fa-trash-can"></i>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                        {filteredOrders.length === 0 && (
+                                            <tr>
+                                                <td colSpan="8">
+                                                    <div className="empty-state-luxury">
+                                                        <i className="fas fa-filter empty-state-icon"></i>
+                                                        <h4 className="empty-state-title">No Orders Match Current Filter</h4>
+                                                        <p className="empty-state-sub">Try clearing the search box or selecting another order status tab.</p>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ═════════ 4. SETTINGS & PRICING ═════════ */}
+                    {activeSection === 'settings' && (
+                        <div>
+                            {settingsNotice && (
+                                <div className="settings-toast-banner" role="alert">
+                                    <i className="fas fa-circle-check" style={{ fontSize: '18px' }}></i>
+                                    <span>{settingsNotice}</span>
+                                </div>
+                            )}
+
+                            <form onSubmit={handleSaveSettings} className="settings-grid-layout">
+                                {/* Card 1: Commercial Rules */}
+                                <div className="settings-card-panel">
+                                    <h4 className="settings-section-heading">
+                                        <i className="fas fa-coins" style={{ color: 'var(--gold)' }}></i>
+                                        Commercial & Commission Parameters
+                                    </h4>
+                                    <p className="settings-section-desc">
+                                        Configure store-wide automatic discount rules and customized transport calculations.
+                                    </p>
+
+                                    <div className="form-field-stack">
+                                        <div className="form-input-group">
+                                            <label className="form-label-title">Online Card Payment Discount (%)</label>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                max="50"
+                                                className="form-control-luxury"
+                                                value={settings.cardDiscountPercent}
+                                                onChange={(e) => setSettings({ ...settings, cardDiscountPercent: parseFloat(e.target.value) || 0 })}
+                                            />
+                                            <span className="form-helper-note">Instantly applied at checkout when client selects Credit/Debit card.</span>
+                                        </div>
+
+                                        <div className="form-input-group">
+                                            <label className="form-label-title">Delivery Rate per Kilometer (Rs.)</label>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                className="form-control-luxury"
+                                                value={settings.deliveryRatePerKm}
+                                                onChange={(e) => setSettings({ ...settings, deliveryRatePerKm: parseFloat(e.target.value) || 0 })}
+                                            />
+                                            <span className="form-helper-note">Computed dynamically from the Moratuwa master workshop.</span>
+                                        </div>
+
+                                        <div className="form-input-group">
+                                            <label className="form-label-title">Cash-on-Delivery Advance Deposit (%)</label>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                max="90"
+                                                className="form-control-luxury"
+                                                value={settings.codAdvancePercent}
+                                                onChange={(e) => setSettings({ ...settings, codAdvancePercent: parseFloat(e.target.value) || 0 })}
+                                            />
+                                            <span className="form-helper-note">Upfront timber commitment deposit required for COD commissions.</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Card 2: Bank Account Details */}
+                                <div className="settings-card-panel">
+                                    <h4 className="settings-section-heading">
+                                        <i className="fas fa-building-columns" style={{ color: 'var(--gold)' }}></i>
+                                        Atelier Bank Wire Details (Public Checkout)
+                                    </h4>
+                                    <p className="settings-section-desc">
+                                        Displayed directly on the customer checkout portal for direct manual wire transfer orders.
+                                    </p>
+
+                                    <div className="form-field-stack">
+                                        <div className="form-input-group">
+                                            <label className="form-label-title">Bank Institution Name</label>
+                                            <input
+                                                type="text"
+                                                className="form-control-luxury"
+                                                value={settings.bankDetails?.bankName || ''}
+                                                onChange={(e) => setSettings({
+                                                    ...settings,
+                                                    bankDetails: { ...settings.bankDetails, bankName: e.target.value }
+                                                })}
+                                            />
+                                        </div>
+
+                                        <div className="form-input-group">
+                                            <label className="form-label-title">Official Beneficiary Account Name</label>
+                                            <input
+                                                type="text"
+                                                className="form-control-luxury"
+                                                value={settings.bankDetails?.accountName || ''}
+                                                onChange={(e) => setSettings({
+                                                    ...settings,
+                                                    bankDetails: { ...settings.bankDetails, accountName: e.target.value }
+                                                })}
+                                            />
+                                        </div>
+
+                                        <div className="form-input-group">
+                                            <label className="form-label-title">Account Number</label>
+                                            <input
+                                                type="text"
+                                                className="form-control-luxury"
+                                                value={settings.bankDetails?.accountNumber || ''}
+                                                onChange={(e) => setSettings({
+                                                    ...settings,
+                                                    bankDetails: { ...settings.bankDetails, accountNumber: e.target.value }
+                                                })}
+                                            />
+                                        </div>
+
+                                        <div className="form-input-group">
+                                            <label className="form-label-title">Branch Location</label>
+                                            <input
+                                                type="text"
+                                                className="form-control-luxury"
+                                                value={settings.bankDetails?.branch || ''}
+                                                onChange={(e) => setSettings({
+                                                    ...settings,
+                                                    bankDetails: { ...settings.bankDetails, branch: e.target.value }
+                                                })}
+                                            />
+                                        </div>
+
+                                        <div style={{ marginTop: '12px' }}>
+                                            <button type="submit" className="btn-gold-primary" disabled={savingSettings}>
+                                                <i className="fas fa-floppy-disk"></i>
+                                                <span>{savingSettings ? 'Publishing Settings...' : 'Save & Publish Rules'}</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    )}
+
+                    {/* ═════════ 5. PATRON REVIEWS ═════════ */}
+                    {activeSection === 'reviews' && (
+                        <div className="atelier-panel-card">
+                            <div className="panel-header-row">
+                                <div className="panel-title-group">
+                                    <h3 className="panel-title">Patron Reflections & Testimonials</h3>
+                                    <span className="panel-subtitle">Verified feedback submitted by clients displayed on the public Lansakara homepage slider</span>
+                                </div>
+                            </div>
+
+                            <div className="table-responsive-container">
+                                <table className="atelier-data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Patron</th>
+                                            <th>Star Rating</th>
+                                            <th>Location & Piece</th>
+                                            <th>Testimonial Reflection</th>
+                                            <th style={{ textAlign: 'right' }}>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {reviews.map((r) => (
+                                            <tr key={r._id || r.id}>
+                                                <td>
+                                                    <div className="patron-cell-group">
+                                                        <div className="patron-avatar-initials">
+                                                            {getInitials(r.authorName)}
+                                                        </div>
+                                                        <div className="patron-details-stack">
+                                                            <span className="patron-name">{r.authorName}</span>
+                                                            <span className="patron-meta-sub">{r.authorEmail}</span>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <span style={{ color: 'var(--gold)', letterSpacing: '2px', fontSize: '14px' }}>
+                                                        {'★'.repeat(r.rating || 5)}{'☆'.repeat(5 - (r.rating || 5))}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <div style={{ fontWeight: 500 }}>{r.location || 'Colombo, Sri Lanka'}</div>
+                                                    <span style={{ fontSize: '11px', color: 'var(--gold-light)' }}>
+                                                        {r.productPurchased || 'Bespoke Solid Wood Piece'}
+                                                    </span>
+                                                </td>
+                                                <td style={{ maxWidth: '340px' }}>
+                                                    <p style={{ fontStyle: 'italic', fontSize: '12.5px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                                                        “{r.quote}”
+                                                    </p>
+                                                </td>
+                                                <td style={{ textAlign: 'right' }}>
+                                                    <button
+                                                        type="button"
+                                                        className="btn-action-circle btn-action-delete"
+                                                        onClick={() => handleReviewAction(r._id || r.id, 'delete')}
+                                                        title="Remove Patron Review"
+                                                    >
+                                                        <i className="fas fa-trash-can"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                        {reviews.length === 0 && (
+                                            <tr>
+                                                <td colSpan="5">
+                                                    <div className="empty-state-luxury">
+                                                        <i className="fas fa-star empty-state-icon"></i>
+                                                        <h4 className="empty-state-title">No Patron Reflections Yet</h4>
+                                                        <p className="empty-state-sub">New feedback submitted on the public atelier will appear here for review.</p>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )}
+                </main>
+            </div>
+
+            {/* ═════════ SLIP PREVIEW LIGHTBOX MODAL ═════════ */}
             {slipModalUrl && (
-                <div
-                    style={{
-                        position: 'fixed',
-                        inset: 0,
-                        background: 'rgba(0,0,0,0.85)',
-                        zIndex: 2000,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        padding: '24px'
-                    }}
-                    onClick={() => setSlipModalUrl(null)}
-                >
-                    <div
-                        style={{
-                            background: 'var(--dark-3)',
-                            padding: '24px',
-                            borderRadius: '12px',
-                            maxWidth: '700px',
-                            width: '100%',
-                            textAlign: 'center'
-                        }}
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <h4 style={{ color: 'var(--gold)', marginBottom: '16px' }}>Attached Transfer Receipt Slip</h4>
+                <div className="modal-overlay-backdrop" onClick={() => setSlipModalUrl(null)}>
+                    <div className="modal-window-luxury" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '680px', textAlign: 'center' }}>
+                        <div className="modal-header-luxury">
+                            <h4 className="modal-title-text">Verified Bank Transfer Slip</h4>
+                            <button
+                                type="button"
+                                className="btn-close-modal"
+                                onClick={() => setSlipModalUrl(null)}
+                                aria-label="Close Preview"
+                            >
+                                <i className="fas fa-xmark"></i>
+                            </button>
+                        </div>
                         <img
                             src={slipModalUrl}
-                            alt="Slip Preview"
-                            style={{ maxWidth: '100%', maxHeight: '70vh', objectFit: 'contain', borderRadius: '8px' }}
+                            alt="Bank Transfer Receipt"
+                            style={{
+                                width: '100%',
+                                maxHeight: '65vh',
+                                objectFit: 'contain',
+                                borderRadius: '10px',
+                                border: '1px solid var(--gold-border)'
+                            }}
                         />
-                        <div style={{ marginTop: '16px' }}>
-                            <button
-                                onClick={() => setSlipModalUrl(null)}
-                                style={{ background: 'var(--dark-4)', color: '#fff', border: '1px solid var(--border)', padding: '8px 20px', borderRadius: '6px', cursor: 'pointer' }}
+                        <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'center', gap: '12px' }}>
+                            <a
+                                href={slipModalUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="btn-gold-primary"
+                                style={{ padding: '8px 18px', fontSize: '12px' }}
                             >
-                                Close Preview
+                                <i className="fas fa-arrow-up-right-from-square"></i>
+                                <span>Open Full Resolution</span>
+                            </a>
+                            <button
+                                type="button"
+                                className="btn-sidebar-secondary"
+                                onClick={() => setSlipModalUrl(null)}
+                                style={{ width: 'auto', padding: '8px 18px' }}
+                            >
+                                <span>Close Lightbox</span>
                             </button>
                         </div>
                     </div>
@@ -1147,52 +1432,38 @@ export default function AdminPage() {
 
             {/* ═════════ ADD PRODUCT MODAL ═════════ */}
             {showProductModal && (
-                <div
-                    style={{
-                        position: 'fixed',
-                        inset: 0,
-                        background: 'rgba(0,0,0,0.85)',
-                        zIndex: 2000,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        padding: '24px'
-                    }}
-                >
-                    <div
-                        style={{
-                            background: 'var(--dark-3)',
-                            border: '1px solid var(--border)',
-                            borderRadius: '16px',
-                            maxWidth: '650px',
-                            width: '100%',
-                            padding: '32px',
-                            maxHeight: '90vh',
-                            overflowY: 'auto'
-                        }}
-                    >
-                        <h3 style={{ fontFamily: 'Playfair Display, serif', fontSize: '22px', color: 'var(--gold)', marginBottom: '20px' }}>
-                            Add New Solid Wood Piece
-                        </h3>
+                <div className="modal-overlay-backdrop">
+                    <div className="modal-window-luxury">
+                        <div className="modal-header-luxury">
+                            <h3 className="modal-title-text">Publish New Solid Wood Masterpiece</h3>
+                            <button
+                                type="button"
+                                className="btn-close-modal"
+                                onClick={() => setShowProductModal(false)}
+                                aria-label="Close Modal"
+                            >
+                                <i className="fas fa-xmark"></i>
+                            </button>
+                        </div>
 
-                        <form onSubmit={handleSaveProduct}>
-                            <div className="form-group">
-                                <label>Product Name *</label>
+                        <form onSubmit={handleSaveProduct} className="form-field-stack">
+                            <div className="form-input-group">
+                                <label className="form-label-title">Product Title *</label>
                                 <input
                                     type="text"
-                                    className="form-control"
+                                    className="form-control-luxury"
                                     required
-                                    placeholder="e.g. Royal Ceylon Dining Table"
+                                    placeholder="e.g. Royal Ceylon Dining Suite"
                                     value={productForm.name}
                                     onChange={(e) => setProductForm({ ...productForm, name: e.target.value })}
                                 />
                             </div>
 
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                                <div className="form-group">
-                                    <label>Category</label>
+                                <div className="form-input-group">
+                                    <label className="form-label-title">Collection Category</label>
                                     <select
-                                        className="form-control"
+                                        className="form-control-luxury"
                                         value={productForm.category}
                                         onChange={(e) => setProductForm({ ...productForm, category: e.target.value })}
                                     >
@@ -1202,11 +1473,11 @@ export default function AdminPage() {
                                         <option value="bedroom">Bedrooms & Suites</option>
                                     </select>
                                 </div>
-                                <div className="form-group">
-                                    <label>Price (Rs.) *</label>
+                                <div className="form-input-group">
+                                    <label className="form-label-title">Price (Rs.) *</label>
                                     <input
                                         type="number"
-                                        className="form-control"
+                                        className="form-control-luxury"
                                         required
                                         placeholder="285000"
                                         value={productForm.price}
@@ -1216,21 +1487,21 @@ export default function AdminPage() {
                             </div>
 
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                                <div className="form-group">
-                                    <label>Timber Species</label>
+                                <div className="form-input-group">
+                                    <label className="form-label-title">Timber Species</label>
                                     <input
                                         type="text"
-                                        className="form-control"
+                                        className="form-control-luxury"
                                         placeholder="Solid Teak / Red Mahogany"
                                         value={productForm.woodType}
                                         onChange={(e) => setProductForm({ ...productForm, woodType: e.target.value })}
                                     />
                                 </div>
-                                <div className="form-group">
-                                    <label>Badge Tag</label>
+                                <div className="form-input-group">
+                                    <label className="form-label-title">Badge Tag</label>
                                     <input
                                         type="text"
-                                        className="form-control"
+                                        className="form-control-luxury"
                                         placeholder="New Arrival / Heirloom"
                                         value={productForm.badge}
                                         onChange={(e) => setProductForm({ ...productForm, badge: e.target.value })}
@@ -1238,41 +1509,52 @@ export default function AdminPage() {
                                 </div>
                             </div>
 
-                            <div className="form-group">
-                                <label>Short Description</label>
+                            <div className="form-input-group">
+                                <label className="form-label-title">Short Specification Description</label>
                                 <input
                                     type="text"
-                                    className="form-control"
-                                    placeholder="Master Carving • Traditional Mortise Joinery"
+                                    className="form-control-luxury"
+                                    placeholder="Hand-Hewn Mortise & Tenon Joinery • Living Edge"
                                     value={productForm.shortDescription}
                                     onChange={(e) => setProductForm({ ...productForm, shortDescription: e.target.value })}
                                 />
                             </div>
 
-                            <div className="form-group">
-                                <label>Upload Product Photograph</label>
+                            <div className="form-input-group">
+                                <label className="form-label-title">Upload High-Res Photograph</label>
                                 <input
                                     type="file"
                                     accept="image/*"
-                                    className="form-control"
+                                    className="form-control-luxury"
                                     onChange={(e) => setProductImageFile(e.target.files[0])}
                                 />
                             </div>
 
-                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '16px' }}>
                                 <button
                                     type="button"
+                                    className="btn-sidebar-secondary"
+                                    style={{ width: 'auto', padding: '10px 20px' }}
                                     onClick={() => setShowProductModal(false)}
-                                    style={{ background: 'var(--dark-4)', color: 'var(--text-muted)', border: '1px solid var(--border)', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer' }}
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     type="submit"
+                                    className="btn-gold-primary"
                                     disabled={savingProduct}
-                                    style={{ background: 'linear-gradient(135deg, var(--gold-dark), var(--gold))', color: '#000', border: 'none', padding: '10px 24px', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}
                                 >
-                                    {savingProduct ? 'Adding Piece...' : 'Publish to Catalog'}
+                                    {savingProduct ? (
+                                        <>
+                                            <i className="fas fa-spinner fa-spin"></i>
+                                            <span>Adding to Collection...</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <i className="fas fa-plus"></i>
+                                            <span>Publish to Catalog</span>
+                                        </>
+                                    )}
                                 </button>
                             </div>
                         </form>
