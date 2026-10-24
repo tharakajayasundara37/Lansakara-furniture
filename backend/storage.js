@@ -586,25 +586,53 @@ async function deleteOrder(id) {
 
 async function getOrderStats() {
   if (isMongoConnected()) {
-    const [total, pending, accepted, delivered, cancelled, recentOrders] = await Promise.all([
+    const [total, pending, accepted, delivered, cancelled, recentOrders, revenueAgg] = await Promise.all([
       OrderModel.countDocuments(),
       OrderModel.countDocuments({ status: 'pending' }),
-      OrderModel.countDocuments({ status: { $in: ['accepted', 'processing', 'ready'] } }),
+      OrderModel.countDocuments({ status: { $in: ['accepted', 'processing', 'in_production', 'ready'] } }),
       OrderModel.countDocuments({ status: 'delivered' }),
       OrderModel.countDocuments({ status: 'cancelled' }),
-      OrderModel.find().sort({ createdAt: -1 }).limit(5)
+      OrderModel.find().sort({ createdAt: -1 }).limit(10),
+      OrderModel.aggregate([
+        { $match: { status: { $ne: 'cancelled' } } },
+        { $group: { _id: null, totalRevenue: { $sum: '$totalPrice' } } }
+      ])
     ]);
-    return { total, pending, accepted, delivered, cancelled, recentOrders };
+    const totalRevenue = revenueAgg[0]?.totalRevenue || 0;
+    return {
+      total,
+      totalOrders: total,
+      pending,
+      pendingOrders: pending,
+      accepted,
+      inProduction: accepted,
+      delivered,
+      cancelled,
+      totalRevenue,
+      recentOrders
+    };
   } else {
     const db = readLocalDb();
     const orders = db.orders || [];
+    const totalRevenue = orders
+      .filter(o => o.status !== 'cancelled')
+      .reduce((sum, o) => sum + (Number(o.totalPrice) || 0), 0);
+    const pending = orders.filter(o => o.status === 'pending').length;
+    const inProduction = orders.filter(o => ['accepted', 'processing', 'in_production', 'ready'].includes(o.status)).length;
+    const delivered = orders.filter(o => o.status === 'delivered').length;
+    const cancelled = orders.filter(o => o.status === 'cancelled').length;
+
     return {
       total: orders.length,
-      pending: orders.filter(o => o.status === 'pending').length,
-      accepted: orders.filter(o => ['accepted', 'processing', 'ready'].includes(o.status)).length,
-      delivered: orders.filter(o => o.status === 'delivered').length,
-      cancelled: orders.filter(o => o.status === 'cancelled').length,
-      recentOrders: orders.slice(0, 5)
+      totalOrders: orders.length,
+      pending,
+      pendingOrders: pending,
+      accepted: inProduction,
+      inProduction,
+      delivered,
+      cancelled,
+      totalRevenue,
+      recentOrders: orders.slice(0, 10)
     };
   }
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import './admin.css';
 
@@ -79,6 +79,14 @@ export default function AdminPage() {
     const [savingProduct, setSavingProduct] = useState(false);
     const [savingSettings, setSavingSettings] = useState(false);
     const [settingsNotice, setSettingsNotice] = useState('');
+    
+    // ──────────────────────────────────────────
+    // EXECUTIVE DASHBOARD DIAGRAMS & ANALYTICS STATE
+    // ──────────────────────────────────────────
+    const [chartPeriod, setChartPeriod] = useState('ALL'); // 'ALL' | '6M' | '30D'
+    const [chartMetric, setChartMetric] = useState('revenue'); // 'revenue' | 'volume'
+    const [hoveredPoint, setHoveredPoint] = useState(null);
+    const [dashboardStatusFilter, setDashboardStatusFilter] = useState('all');
 
     // ──────────────────────────────────────────
     // MOUNT & CLOCK EFFECTS
@@ -111,6 +119,199 @@ export default function AdminPage() {
             loadDashboardData();
         }
     }, [token]);
+
+    
+    // ──────────────────────────────────────────
+    // REAL-TIME ANALYTICS COMPUTATIONS (100% REAL DATA)
+    // ──────────────────────────────────────────
+    const realStats = useMemo(() => {
+        const validOrders = orders.filter((o) => o.status !== 'cancelled');
+        const grossRev = validOrders.reduce((sum, o) => sum + (Number(o.totalPrice) || 0), 0);
+        const pipelineVal = orders
+            .filter((o) => ['pending', 'accepted', 'processing', 'in_production', 'ready'].includes(o.status))
+            .reduce((sum, o) => sum + (Number(o.totalPrice) || 0), 0);
+        const deliveredRev = orders
+            .filter((o) => o.status === 'delivered')
+            .reduce((sum, o) => sum + (Number(o.totalPrice) || 0), 0);
+        
+        const deliveredCount = orders.filter((o) => o.status === 'delivered').length;
+        const pendingCount = orders.filter((o) => o.status === 'pending').length;
+        const inProdCount = orders.filter((o) => ['accepted', 'processing', 'in_production', 'ready'].includes(o.status)).length;
+        
+        const aov = orders.length > 0 ? Math.round(grossRev / orders.length) : 0;
+        const fulfillmentRate = orders.length > 0 ? Math.round((deliveredCount / orders.length) * 100) : 0;
+        
+        const avgRating = reviews.length > 0
+            ? (reviews.reduce((sum, r) => sum + (Number(r.rating) || 5), 0) / reviews.length).toFixed(1)
+            : '5.0';
+
+        return {
+            grossRev,
+            pipelineVal,
+            deliveredRev,
+            deliveredCount,
+            pendingCount,
+            inProdCount,
+            aov,
+            fulfillmentRate,
+            avgRating
+        };
+    }, [orders, reviews]);
+
+    // Monthly Revenue & Commission Volume Curve Data
+    const monthlyTrendData = useMemo(() => {
+        const monthMap = {};
+
+        // Populate months from orders or fallback to current & recent months
+        const now = new Date();
+        for (let i = 5; i >= 0; i--) {
+            const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+            const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+            const label = d.toLocaleDateString('en-US', { month: 'short' });
+            monthMap[key] = { key, label, revenue: 0, orderCount: 0 };
+        }
+
+        orders.forEach((o) => {
+            if (o.status === 'cancelled') return;
+            const d = o.createdAt ? new Date(o.createdAt) : new Date();
+            const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+            const label = d.toLocaleDateString('en-US', { month: 'short' });
+
+            if (!monthMap[key]) {
+                monthMap[key] = { key, label, revenue: 0, orderCount: 0 };
+            }
+            monthMap[key].revenue += Number(o.totalPrice) || 0;
+            monthMap[key].orderCount += 1;
+        });
+
+        const sortedKeys = Object.keys(monthMap).sort();
+        // If '6M', take last 6; if 'ALL', take all
+        const filteredKeys = chartPeriod === '6M' ? sortedKeys.slice(-6) : sortedKeys;
+
+        return filteredKeys.map((k) => ({
+            ...monthMap[k],
+            avgOrderValue: monthMap[k].orderCount > 0 ? Math.round(monthMap[k].revenue / monthMap[k].orderCount) : 0
+        }));
+    }, [orders, chartPeriod]);
+
+    // Donut Diagram: Order Status Distribution
+    const pipelineDonut = useMemo(() => {
+        const meta = {
+            pending: { label: 'Pending Review', color: '#F59E0B', icon: 'fa-hourglass-half' },
+            accepted: { label: 'Artisan Accepted', color: '#3B82F6', icon: 'fa-check' },
+            in_production: { label: 'In Production', color: '#60A5FA', icon: 'fa-hammer' },
+            processing: { label: 'Wood Seasoning', color: '#818CF8', icon: 'fa-tools' },
+            ready: { label: 'Ready for Dispatch', color: '#A855F7', icon: 'fa-box-archive' },
+            delivered: { label: 'Delivered', color: '#10B981', icon: 'fa-circle-check' },
+            cancelled: { label: 'Cancelled', color: '#EF4444', icon: 'fa-xmark' }
+        };
+
+        const counts = {};
+        const values = {};
+        let total = 0;
+
+        orders.forEach((o) => {
+            const st = o.status || 'pending';
+            counts[st] = (counts[st] || 0) + 1;
+            values[st] = (values[st] || 0) + (Number(o.totalPrice) || 0);
+            total += 1;
+        });
+
+        let cumulativeAngle = 0;
+        const circumference = 2 * Math.PI * 72; // r=72 => ~452.39
+
+        const segments = Object.keys(counts).map((st) => {
+            const count = counts[st];
+            const val = values[st] || 0;
+            const percent = total > 0 ? (count / total) * 100 : 0;
+            const strokeDasharray = `${(percent / 100) * circumference} ${circumference}`;
+            const strokeDashoffset = -cumulativeAngle;
+            cumulativeAngle += (percent / 100) * circumference;
+
+            return {
+                status: st,
+                label: meta[st]?.label || st,
+                color: meta[st]?.color || '#D4AF37',
+                icon: meta[st]?.icon || 'fa-circle',
+                count,
+                value: val,
+                percent: Math.round(percent),
+                strokeDasharray,
+                strokeDashoffset
+            };
+        });
+
+        return { segments, totalOrdersCount: total, circumference };
+    }, [orders]);
+
+    // Category Distribution from real products
+    const categoryBreakdown = useMemo(() => {
+        const map = {};
+        let totalValue = 0;
+
+        products.forEach((p) => {
+            const cat = (p.category || 'other').toLowerCase();
+            const price = Number(p.price) || 0;
+            totalValue += price;
+
+            if (!map[cat]) {
+                map[cat] = { count: 0, totalValue: 0 };
+            }
+            map[cat].count += 1;
+            map[cat].totalValue += price;
+        });
+
+        const list = Object.keys(map).map((cat) => ({
+            category: cat,
+            label: cat.charAt(0).toUpperCase() + cat.slice(1),
+            count: map[cat].count,
+            totalValue: map[cat].totalValue,
+            percent: products.length > 0 ? Math.round((map[cat].count / products.length) * 100) : 0
+        })).sort((a, b) => b.count - a.count);
+
+        return { list, totalInventoryValue: totalValue };
+    }, [products]);
+
+    // Payment Methods Breakdown from real orders
+    const paymentMethodsBreakdown = useMemo(() => {
+        const meta = {
+            card: { label: 'Online Card (Visa/MC)', color: '#10B981', icon: 'fa-credit-card' },
+            bank_transfer: { label: 'Direct Bank Wire', color: '#3B82F6', icon: 'fa-building-columns' },
+            cod: { label: 'Cash on Delivery (Advance)', color: '#F59E0B', icon: 'fa-hand-holding-dollar' }
+        };
+
+        const map = {};
+        let totalVal = 0;
+
+        orders.forEach((o) => {
+            const method = o.paymentMethod || 'card';
+            const price = Number(o.totalPrice) || 0;
+            totalVal += price;
+
+            if (!map[method]) {
+                map[method] = { count: 0, value: 0 };
+            }
+            map[method].count += 1;
+            map[method].value += price;
+        });
+
+        return Object.keys(map).map((m) => {
+            const cMeta = meta[m] || { label: m.toUpperCase(), color: '#D4AF37', icon: 'fa-receipt' };
+            const count = map[m].count;
+            const val = map[m].value;
+            const percent = totalVal > 0 ? Math.round((val / totalVal) * 100) : 0;
+            return {
+                method: m,
+                label: cMeta.label,
+                color: cMeta.color,
+                icon: cMeta.icon,
+                count,
+                value: val,
+                percent
+            };
+        }).sort((a, b) => b.value - a.value);
+    }, [orders]);
+
 
     const getAuthHeaders = () => ({
         'Authorization': `Bearer ${token}`
@@ -646,7 +847,7 @@ export default function AdminPage() {
                     {/* ═════════ 1. DASHBOARD OVERVIEW ═════════ */}
                     {activeSection === 'dashboard' && (
                         <>
-                            {/* Metric Cards Grid */}
+                            {/* Metric Cards Grid - Real-time & Accurate */}
                             <div className="stats-grid-luxury">
                                 <div className="stat-card-luxury">
                                     <div className="stat-top-row">
@@ -656,7 +857,7 @@ export default function AdminPage() {
                                         </div>
                                     </div>
                                     <div className="stat-number-value highlight-gold">
-                                        Rs. {(stats.totalRevenue || 0).toLocaleString()}
+                                        Rs. {realStats.grossRev.toLocaleString()}
                                     </div>
                                     <div className="stat-footer-tag">
                                         <i className="fas fa-check-circle" style={{ color: 'var(--emerald)' }}></i>
@@ -666,56 +867,56 @@ export default function AdminPage() {
 
                                 <div className="stat-card-luxury">
                                     <div className="stat-top-row">
-                                        <span className="stat-title">Bespoke Orders</span>
-                                        <div className="stat-icon-badge stat-icon-blue">
-                                            <i className="fas fa-clipboard-check"></i>
-                                        </div>
-                                    </div>
-                                    <div className="stat-number-value">
-                                        {stats.totalOrders || orders.length}
-                                    </div>
-                                    <div className="stat-footer-tag">
-                                        <i className="fas fa-boxes-stacked" style={{ color: 'var(--blue)' }}></i>
-                                        <span>Active Inquiries & Pipeline</span>
-                                    </div>
-                                </div>
-
-                                <div className="stat-card-luxury">
-                                    <div className="stat-top-row">
-                                        <span className="stat-title">Pending Review</span>
-                                        <div className="stat-icon-badge stat-icon-amber">
-                                            <i className="fas fa-hourglass-half"></i>
-                                        </div>
-                                    </div>
-                                    <div className="stat-number-value" style={{ color: 'var(--amber)' }}>
-                                        {stats.pendingOrders || orders.filter((o) => o.status === 'pending').length}
-                                    </div>
-                                    <div className="stat-footer-tag">
-                                        <i className="fas fa-bell" style={{ color: 'var(--amber)' }}></i>
-                                        <span>Requires Artisan Action</span>
-                                    </div>
-                                </div>
-
-                                <div className="stat-card-luxury">
-                                    <div className="stat-top-row">
-                                        <span className="stat-title">In Production</span>
+                                        <span className="stat-title">Active Pipeline</span>
                                         <div className="stat-icon-badge stat-icon-blue">
                                             <i className="fas fa-hammer"></i>
                                         </div>
                                     </div>
-                                    <div className="stat-number-value" style={{ color: 'var(--blue)' }}>
-                                        {stats.inProduction || orders.filter((o) => o.status === 'in_production').length}
+                                    <div className="stat-number-value" style={{ color: 'var(--gold-light)' }}>
+                                        Rs. {realStats.pipelineVal.toLocaleString()}
                                     </div>
                                     <div className="stat-footer-tag">
-                                        <i className="fas fa-screwdriver-wrench"></i>
-                                        <span>On Carpenter Workbench</span>
+                                        <i className="fas fa-boxes-stacked" style={{ color: 'var(--blue)' }}></i>
+                                        <span>{realStats.inProdCount + realStats.pendingCount} Commissions in Progress</span>
+                                    </div>
+                                </div>
+
+                                <div className="stat-card-luxury">
+                                    <div className="stat-top-row">
+                                        <span className="stat-title">Bespoke Orders</span>
+                                        <div className="stat-icon-badge stat-icon-amber">
+                                            <i className="fas fa-clipboard-check"></i>
+                                        </div>
+                                    </div>
+                                    <div className="stat-number-value">
+                                        {orders.length}
+                                    </div>
+                                    <div className="stat-footer-tag">
+                                        <i className="fas fa-hourglass-half" style={{ color: 'var(--amber)' }}></i>
+                                        <span>{realStats.pendingCount} Requires Artisan Review</span>
+                                    </div>
+                                </div>
+
+                                <div className="stat-card-luxury">
+                                    <div className="stat-top-row">
+                                        <span className="stat-title">Avg. Commission (AOV)</span>
+                                        <div className="stat-icon-badge stat-icon-emerald">
+                                            <i className="fas fa-receipt"></i>
+                                        </div>
+                                    </div>
+                                    <div className="stat-number-value" style={{ color: 'var(--emerald)' }}>
+                                        Rs. {realStats.aov.toLocaleString()}
+                                    </div>
+                                    <div className="stat-footer-tag">
+                                        <i className="fas fa-chart-line" style={{ color: 'var(--emerald)' }}></i>
+                                        <span>Fulfillment Rate: {realStats.fulfillmentRate}%</span>
                                     </div>
                                 </div>
 
                                 <div className="stat-card-luxury">
                                     <div className="stat-top-row">
                                         <span className="stat-title">Catalog Pieces</span>
-                                        <div className="stat-icon-badge stat-icon-emerald">
+                                        <div className="stat-icon-badge stat-icon-gold">
                                             <i className="fas fa-couch"></i>
                                         </div>
                                     </div>
@@ -723,28 +924,534 @@ export default function AdminPage() {
                                         {products.length}
                                     </div>
                                     <div className="stat-footer-tag">
-                                        <i className="fas fa-globe" style={{ color: 'var(--emerald)' }}></i>
-                                        <span>Published to Showroom</span>
+                                        <i className="fas fa-star" style={{ color: 'var(--gold)' }}></i>
+                                        <span>Reviews: {realStats.avgRating} / 5.0 ★</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* ═════════ REAL-DATA DIAGRAMS SUITE ═════════ */}
+                            {/* DIAGRAM ROW 1: Monthly Revenue Timeline & Status Pipeline Donut */}
+                            <div className="analytics-grid-two-col">
+                                {/* Diagram 1: Monthly Timeline Area Chart */}
+                                <div className="chart-panel-card">
+                                    <div className="chart-header-row">
+                                        <div className="chart-title-group">
+                                            <h4>
+                                                <i className="fas fa-chart-area" style={{ color: 'var(--gold)' }}></i>
+                                                Workshop Revenue & Commission Trajectory
+                                            </h4>
+                                            <p>Real-time monthly revenue and commissioned volume across all atelier orders</p>
+                                        </div>
+                                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                            <div className="chart-pills-filter">
+                                                <button
+                                                    type="button"
+                                                    className={`chart-pill-btn ${chartMetric === 'revenue' ? 'active' : ''}`}
+                                                    onClick={() => setChartMetric('revenue')}
+                                                >
+                                                    Revenue (LKR)
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className={`chart-pill-btn ${chartMetric === 'volume' ? 'active' : ''}`}
+                                                    onClick={() => setChartMetric('volume')}
+                                                >
+                                                    Orders Count
+                                                </button>
+                                            </div>
+
+                                            <div className="chart-pills-filter">
+                                                <button
+                                                    type="button"
+                                                    className={`chart-pill-btn ${chartPeriod === '6M' ? 'active' : ''}`}
+                                                    onClick={() => setChartPeriod('6M')}
+                                                >
+                                                    6M
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className={`chart-pill-btn ${chartPeriod === 'ALL' ? 'active' : ''}`}
+                                                    onClick={() => setChartPeriod('ALL')}
+                                                >
+                                                    All Time
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* SVG Area & Spline Diagram */}
+                                    <div className="chart-svg-container" style={{ position: 'relative' }}>
+                                        {(() => {
+                                            const data = monthlyTrendData;
+                                            const svgW = 620;
+                                            const svgH = 220;
+                                            const padL = 60;
+                                            const padR = 25;
+                                            const padT = 20;
+                                            const padB = 35;
+                                            const plotW = svgW - padL - padR;
+                                            const plotH = svgH - padT - padB;
+
+                                            const values = data.map((d) => (chartMetric === 'revenue' ? d.revenue : d.orderCount));
+                                            const maxVal = Math.max(...values, chartMetric === 'revenue' ? 200000 : 5);
+                                            const stepY = maxVal / 3;
+
+                                            const points = data.map((d, i) => {
+                                                const x = padL + (data.length > 1 ? (i / (data.length - 1)) * plotW : plotW / 2);
+                                                const val = chartMetric === 'revenue' ? d.revenue : d.orderCount;
+                                                const y = padT + plotH - (val / maxVal) * plotH;
+                                                return { ...d, x, y, val };
+                                            });
+
+                                            // Construct Area Path and Stroke Line Path
+                                            const linePath = points.reduce((acc, pt, idx) => {
+                                                return idx === 0 ? `M ${pt.x} ${pt.y}` : `${acc} L ${pt.x} ${pt.y}`;
+                                            }, '');
+
+                                            const areaPath = points.length > 0
+                                                ? `${linePath} L ${points[points.length - 1].x} ${padT + plotH} L ${points[0].x} ${padT + plotH} Z`
+                                                : '';
+
+                                            return (
+                                                <svg viewBox={`0 0 ${svgW} ${svgH}`} className="chart-svg-elem">
+                                                    <defs>
+                                                        <linearGradient id="chartGoldGlow" x1="0" y1="0" x2="0" y2="1">
+                                                            <stop offset="0%" stopColor="#D4AF37" stopOpacity="0.45" />
+                                                            <stop offset="70%" stopColor="#D4AF37" stopOpacity="0.08" />
+                                                            <stop offset="100%" stopColor="#D4AF37" stopOpacity="0" />
+                                                        </linearGradient>
+                                                        <linearGradient id="chartStrokeGrad" x1="0" y1="0" x2="1" y2="0">
+                                                            <stop offset="0%" stopColor="#F4E4BA" />
+                                                            <stop offset="50%" stopColor="#D4AF37" />
+                                                            <stop offset="100%" stopColor="#C5A880" />
+                                                        </linearGradient>
+                                                    </defs>
+
+                                                    {/* Y-Axis Gridlines */}
+                                                    {[0, 1, 2, 3].map((g) => {
+                                                        const y = padT + plotH - (g / 3) * plotH;
+                                                        const valLabel = chartMetric === 'revenue'
+                                                            ? `Rs. ${Math.round((g * stepY) / 1000)}k`
+                                                            : Math.round(g * stepY);
+                                                        return (
+                                                            <g key={g}>
+                                                                <line
+                                                                    x1={padL}
+                                                                    y1={y}
+                                                                    x2={svgW - padR}
+                                                                    y2={y}
+                                                                    stroke="rgba(255, 255, 255, 0.06)"
+                                                                    strokeDasharray="4 4"
+                                                                />
+                                                                <text
+                                                                    x={padL - 10}
+                                                                    y={y + 4}
+                                                                    textAnchor="end"
+                                                                    fontSize="10"
+                                                                    fill="var(--text-muted)"
+                                                                    fontWeight="600"
+                                                                >
+                                                                    {valLabel}
+                                                                </text>
+                                                            </g>
+                                                        );
+                                                    })}
+
+                                                    {/* Area Fill */}
+                                                    {areaPath && (
+                                                        <path d={areaPath} fill="url(#chartGoldGlow)" />
+                                                    )}
+
+                                                    {/* Stroke Path */}
+                                                    {linePath && (
+                                                        <path
+                                                            d={linePath}
+                                                            fill="none"
+                                                            stroke="url(#chartStrokeGrad)"
+                                                            strokeWidth="3"
+                                                            strokeLinecap="round"
+                                                            strokeLinejoin="round"
+                                                        />
+                                                    )}
+
+                                                    {/* Points & X-Labels */}
+                                                    {points.map((pt, idx) => (
+                                                        <g
+                                                            key={idx}
+                                                            onMouseEnter={() => setHoveredPoint(pt)}
+                                                            onMouseLeave={() => setHoveredPoint(null)}
+                                                            style={{ cursor: 'pointer' }}
+                                                        >
+                                                            <circle
+                                                                cx={pt.x}
+                                                                cy={pt.y}
+                                                                r={hoveredPoint?.key === pt.key ? 7 : 5}
+                                                                fill="#0A0705"
+                                                                stroke="#D4AF37"
+                                                                strokeWidth={hoveredPoint?.key === pt.key ? 3 : 2}
+                                                                style={{ transition: 'all 0.2s ease' }}
+                                                            />
+                                                            <text
+                                                                x={pt.x}
+                                                                y={svgH - 12}
+                                                                textAnchor="middle"
+                                                                fontSize="11"
+                                                                fill={hoveredPoint?.key === pt.key ? 'var(--gold-light)' : 'var(--text-secondary)'}
+                                                                fontWeight={hoveredPoint?.key === pt.key ? '700' : '500'}
+                                                            >
+                                                                {pt.label}
+                                                            </text>
+                                                        </g>
+                                                    ))}
+                                                </svg>
+                                            );
+                                        })()}
+
+                                        {/* Floating Glass Tooltip */}
+                                        {hoveredPoint && (
+                                            <div
+                                                style={{
+                                                    position: 'absolute',
+                                                    top: Math.max(10, hoveredPoint.y - 85),
+                                                    left: Math.min(480, Math.max(30, hoveredPoint.x - 70)),
+                                                    background: 'rgba(18, 13, 10, 0.95)',
+                                                    border: '1px solid var(--gold)',
+                                                    borderRadius: '10px',
+                                                    padding: '8px 12px',
+                                                    boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
+                                                    pointerEvents: 'none',
+                                                    zIndex: 20,
+                                                    minWidth: '150px'
+                                                }}
+                                            >
+                                                <div style={{ fontSize: '11px', color: 'var(--gold)', fontWeight: 700, textTransform: 'uppercase' }}>
+                                                    {hoveredPoint.label} Performance
+                                                </div>
+                                                <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-primary)', marginTop: '2px' }}>
+                                                    Rs. {hoveredPoint.revenue.toLocaleString()}
+                                                </div>
+                                                <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px', display: 'flex', justifyContent: 'space-between' }}>
+                                                    <span>Commissions:</span>
+                                                    <span style={{ fontWeight: 700 }}>{hoveredPoint.orderCount} orders</span>
+                                                </div>
+                                                {hoveredPoint.orderCount > 0 && (
+                                                    <div style={{ fontSize: '10.5px', color: 'var(--emerald)', marginTop: '2px' }}>
+                                                        AOV: Rs. {hoveredPoint.avgOrderValue.toLocaleString()}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Diagram 2: Order Lifecycle Donut Diagram */}
+                                <div className="chart-panel-card">
+                                    <div className="chart-header-row">
+                                        <div className="chart-title-group">
+                                            <h4>
+                                                <i className="fas fa-pie-chart" style={{ color: 'var(--blue)' }}></i>
+                                                Production & Order Pipeline
+                                            </h4>
+                                            <p>Live status distribution across all custom commissions</p>
+                                        </div>
+                                        <span className="badge-pill-outline" style={{ fontSize: '10.5px' }}>
+                                            {orders.length} Total Orders
+                                        </span>
+                                    </div>
+
+                                    <div className="donut-center-group">
+                                        {/* SVG Donut */}
+                                        <div className="donut-graphic-col">
+                                            <svg width="200" height="200" viewBox="0 0 200 200">
+                                                {/* Background Circle */}
+                                                <circle
+                                                    cx="100"
+                                                    cy="100"
+                                                    r="72"
+                                                    fill="none"
+                                                    stroke="rgba(255, 255, 255, 0.05)"
+                                                    strokeWidth="20"
+                                                />
+                                                {/* Donut Segments */}
+                                                {pipelineDonut.segments.map((seg, idx) => (
+                                                    <circle
+                                                        key={idx}
+                                                        cx="100"
+                                                        cy="100"
+                                                        r="72"
+                                                        fill="none"
+                                                        stroke={seg.color}
+                                                        strokeWidth="20"
+                                                        strokeDasharray={seg.strokeDasharray}
+                                                        strokeDashoffset={seg.strokeDashoffset}
+                                                        strokeLinecap={pipelineDonut.segments.length === 1 ? 'butt' : 'round'}
+                                                        style={{ transition: 'all 0.5s ease', cursor: 'pointer' }}
+                                                        onClick={() => setDashboardStatusFilter(seg.status)}
+                                                    />
+                                                ))}
+                                            </svg>
+                                            <div
+                                                style={{
+                                                    position: 'absolute',
+                                                    display: 'flex',
+                                                    flexDirection: 'column',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    textAlign: 'center',
+                                                    pointerEvents: 'none'
+                                                }}
+                                            >
+                                                <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.8px' }}>
+                                                    Pipeline Value
+                                                </span>
+                                                <span style={{ fontSize: '15px', fontWeight: 800, color: 'var(--gold-light)' }}>
+                                                    Rs. {Math.round(realStats.pipelineVal / 1000)}k
+                                                </span>
+                                                <span style={{ fontSize: '10px', color: 'var(--emerald)', fontWeight: 600 }}>
+                                                    {realStats.inProdCount + realStats.pendingCount} Active
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        {/* Interactive Legend Stack */}
+                                        <div className="donut-legend-stack">
+                                            {pipelineDonut.segments.map((seg) => (
+                                                <button
+                                                    key={seg.status}
+                                                    type="button"
+                                                    className="donut-legend-row"
+                                                    onClick={() => setDashboardStatusFilter(dashboardStatusFilter === seg.status ? 'all' : seg.status)}
+                                                    style={{
+                                                        borderColor: dashboardStatusFilter === seg.status ? seg.color : 'rgba(255, 255, 255, 0.04)',
+                                                        background: dashboardStatusFilter === seg.status ? 'rgba(212, 175, 55, 0.12)' : 'rgba(255, 255, 255, 0.02)'
+                                                    }}
+                                                >
+                                                    <div className="donut-legend-label">
+                                                        <span className="donut-legend-dot" style={{ backgroundColor: seg.color }}></span>
+                                                        <span>{seg.label}</span>
+                                                    </div>
+                                                    <div className="donut-legend-val">
+                                                        <span>{seg.count}</span>
+                                                        <span style={{ color: 'var(--text-muted)', fontWeight: 500, fontSize: '11px', marginLeft: '6px' }}>
+                                                            ({seg.percent}%)
+                                                        </span>
+                                                    </div>
+                                                </button>
+                                            ))}
+                                            {pipelineDonut.segments.length === 0 && (
+                                                <div style={{ fontSize: '12px', color: 'var(--text-muted)', padding: '10px' }}>
+                                                    No orders recorded yet.
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* DIAGRAM ROW 2: Category Distribution, Settlement Channels & Atelier Health */}
+                            <div className="analytics-grid-three-col">
+                                {/* Diagram 3: Showroom Category & Timber Distribution */}
+                                <div className="chart-panel-card">
+                                    <div className="chart-header-row">
+                                        <div className="chart-title-group">
+                                            <h4>
+                                                <i className="fas fa-layer-group" style={{ color: 'var(--gold)' }}></i>
+                                                Showroom Catalog & Asset Share
+                                            </h4>
+                                            <p>Real-time breakdown of pieces across luxury timber collections</p>
+                                        </div>
+                                        <span style={{ fontSize: '11.5px', color: 'var(--gold-light)', fontWeight: 700 }}>
+                                            Rs. {categoryBreakdown.totalInventoryValue.toLocaleString()}
+                                        </span>
+                                    </div>
+
+                                    <div className="category-progress-list">
+                                        {categoryBreakdown.list.slice(0, 5).map((cat) => (
+                                            <div key={cat.category} className="category-progress-item">
+                                                <div className="category-item-header">
+                                                    <span className="category-name-span">
+                                                        {cat.label}
+                                                        <span className="category-count-badge">({cat.count} pieces)</span>
+                                                    </span>
+                                                    <span className="category-value-span">
+                                                        Rs. {cat.totalValue.toLocaleString()}
+                                                    </span>
+                                                </div>
+                                                <div className="category-bar-track">
+                                                    <div
+                                                        className="category-bar-fill"
+                                                        style={{ width: `${Math.max(8, cat.percent)}%` }}
+                                                    ></div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {/* Timber Heritage Chips */}
+                                    <div className="timber-pills-row">
+                                        <span className="timber-pill"><i className="fas fa-tree"></i> Solid Teak</span>
+                                        <span className="timber-pill"><i className="fas fa-leaf"></i> Suar Slab</span>
+                                        <span className="timber-pill"><i className="fas fa-seedling"></i> Ceylon Mahogany</span>
+                                        <span className="timber-pill"><i className="fas fa-gem"></i> Rare Nadun</span>
+                                    </div>
+                                </div>
+
+                                {/* Diagram 4: Payment Settlement Breakdown */}
+                                <div className="chart-panel-card">
+                                    <div className="chart-header-row">
+                                        <div className="chart-title-group">
+                                            <h4>
+                                                <i className="fas fa-credit-card" style={{ color: 'var(--emerald)' }}></i>
+                                                Patron Settlement Channels
+                                            </h4>
+                                            <p>Real payments received across online & bank wire channels</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="payment-methods-stack">
+                                        {paymentMethodsBreakdown.map((pm) => (
+                                            <div key={pm.method} className="payment-method-card">
+                                                <div className="payment-method-left">
+                                                    <div className="payment-method-icon" style={{ background: `${pm.color}22`, color: pm.color }}>
+                                                        <i className={`fas ${pm.icon}`}></i>
+                                                    </div>
+                                                    <div>
+                                                        <div className="payment-method-title">{pm.label}</div>
+                                                        <div className="payment-method-sub">{pm.count} transactions settled</div>
+                                                    </div>
+                                                </div>
+                                                <div className="payment-method-right">
+                                                    <div className="payment-method-amount">Rs. {pm.value.toLocaleString()}</div>
+                                                    <div className="payment-method-percent">{pm.percent}% of gross</div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                        {paymentMethodsBreakdown.length === 0 && (
+                                            <div style={{ color: 'var(--text-muted)', fontSize: '12px', padding: '14px 0' }}>
+                                                Awaiting first verified patron transaction.
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Diagram 5: Atelier Health & Key Operational Metrics */}
+                                <div className="chart-panel-card">
+                                    <div className="chart-header-row">
+                                        <div className="chart-title-group">
+                                            <h4>
+                                                <i className="fas fa-shield-halved" style={{ color: 'var(--amber)' }}></i>
+                                                Atelier Health & Benchmarks
+                                            </h4>
+                                            <p>Real-time operational ratios & craftsmanship quality indicators</p>
+                                        </div>
+                                    </div>
+
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', background: 'rgba(255,255,255,0.02)', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                <i className="fas fa-truck-ramp-box" style={{ color: 'var(--emerald)' }}></i>
+                                                <span style={{ fontSize: '12.5px', color: 'var(--text-secondary)' }}>Fulfillment Rate</span>
+                                            </div>
+                                            <span style={{ fontWeight: 800, color: 'var(--emerald)', fontSize: '14px' }}>
+                                                {realStats.fulfillmentRate}%
+                                            </span>
+                                        </div>
+
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', background: 'rgba(255,255,255,0.02)', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                <i className="fas fa-star" style={{ color: 'var(--gold)' }}></i>
+                                                <span style={{ fontSize: '12.5px', color: 'var(--text-secondary)' }}>Patron Satisfaction</span>
+                                            </div>
+                                            <span style={{ fontWeight: 800, color: 'var(--gold)', fontSize: '14px' }}>
+                                                {realStats.avgRating} / 5.0 ★
+                                            </span>
+                                        </div>
+
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', background: 'rgba(255,255,255,0.02)', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                <i className="fas fa-receipt" style={{ color: 'var(--blue)' }}></i>
+                                                <span style={{ fontSize: '12.5px', color: 'var(--text-secondary)' }}>Average Ticket Size</span>
+                                            </div>
+                                            <span style={{ fontWeight: 800, color: 'var(--text-primary)', fontSize: '13.5px' }}>
+                                                Rs. {realStats.aov.toLocaleString()}
+                                            </span>
+                                        </div>
+
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', background: 'rgba(255,255,255,0.02)', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                <i className="fas fa-clock" style={{ color: 'var(--amber)' }}></i>
+                                                <span style={{ fontSize: '12.5px', color: 'var(--text-secondary)' }}>Action Required</span>
+                                            </div>
+                                            <span style={{ fontWeight: 800, color: realStats.pendingCount > 0 ? 'var(--amber)' : 'var(--emerald)', fontSize: '13.5px' }}>
+                                                {realStats.pendingCount} Pending Orders
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
 
                             {/* Recent Orders Overview Card */}
                             <div className="atelier-panel-card">
-                                <div className="panel-header-row">
+                                <div className="panel-header-row" style={{ flexWrap: 'wrap', gap: '14px' }}>
                                     <div className="panel-title-group">
-                                        <h3 className="panel-title">Recent Bespoke Patron Commissions</h3>
+                                        <h3 className="panel-title">
+                                            Recent Bespoke Patron Commissions
+                                            {dashboardStatusFilter !== 'all' && (
+                                                <span className="badge-pill-outline" style={{ marginLeft: '10px', fontSize: '11px', color: 'var(--gold-light)' }}>
+                                                    Filtered: {dashboardStatusFilter.replace('_', ' ')}
+                                                </span>
+                                            )}
+                                        </h3>
                                         <span className="panel-subtitle">Latest custom furniture orders placed across Sri Lanka</span>
                                     </div>
-                                    <button
-                                        type="button"
-                                        className="btn-gold-primary"
-                                        onClick={() => setActiveSection('orders')}
-                                        style={{ padding: '8px 18px', fontSize: '11.5px' }}
-                                    >
-                                        <span>View Complete Order Book ({orders.length})</span>
-                                        <i className="fas fa-arrow-right"></i>
-                                    </button>
+
+                                    {/* Quick Status Filter Pills */}
+                                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                                        <div className="chart-pills-filter">
+                                            <button
+                                                type="button"
+                                                className={`chart-pill-btn ${dashboardStatusFilter === 'all' ? 'active' : ''}`}
+                                                onClick={() => setDashboardStatusFilter('all')}
+                                            >
+                                                All ({orders.length})
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className={`chart-pill-btn ${dashboardStatusFilter === 'pending' ? 'active' : ''}`}
+                                                onClick={() => setDashboardStatusFilter('pending')}
+                                                style={{ color: dashboardStatusFilter === 'pending' ? '#fff' : 'var(--amber)' }}
+                                            >
+                                                Pending ({realStats.pendingCount})
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className={`chart-pill-btn ${['accepted', 'in_production', 'processing'].includes(dashboardStatusFilter) ? 'active' : ''}`}
+                                                onClick={() => setDashboardStatusFilter('in_production')}
+                                                style={{ color: ['accepted', 'in_production', 'processing'].includes(dashboardStatusFilter) ? '#fff' : 'var(--blue)' }}
+                                            >
+                                                Production ({realStats.inProdCount})
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className={`chart-pill-btn ${dashboardStatusFilter === 'delivered' ? 'active' : ''}`}
+                                                onClick={() => setDashboardStatusFilter('delivered')}
+                                                style={{ color: dashboardStatusFilter === 'delivered' ? '#fff' : 'var(--emerald)' }}
+                                            >
+                                                Delivered ({realStats.deliveredCount})
+                                            </button>
+                                        </div>
+
+                                        <button
+                                            type="button"
+                                            className="btn-gold-primary"
+                                            onClick={() => setActiveSection('orders')}
+                                            style={{ padding: '7px 16px', fontSize: '11.5px' }}
+                                        >
+                                            <span>Full Book</span>
+                                            <i className="fas fa-arrow-right"></i>
+                                        </button>
+                                    </div>
                                 </div>
 
                                 <div className="table-responsive-container">
@@ -761,7 +1468,10 @@ export default function AdminPage() {
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {orders.slice(0, 6).map((o) => (
+                                            {orders
+      .filter((o) => dashboardStatusFilter === 'all' || o.status === dashboardStatusFilter || (dashboardStatusFilter === 'in_production' && ['accepted', 'processing', 'in_production', 'ready'].includes(o.status)))
+      .slice(0, 8)
+      .map((o) => (
                                                 <tr key={o._id}>
                                                     <td>
                                                         <span className="ref-hash-pill">
