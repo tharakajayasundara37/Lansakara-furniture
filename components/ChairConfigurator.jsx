@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 
 // ════════════════════════════════════════════════════════════════
 // 100% PHOTOREALISTIC 3D PBR CHAIR CATALOG (ZERO CARTOONS)
@@ -132,42 +133,57 @@ const lightingMoods = {
 };
 
 // ════════════════════════════════════════════════════════════════
-// TIMBER, FABRIC & ACCENT OPTIONS
+// TIMBER, FABRIC & ACCENT OPTIONS (PHYSICALLY BASED MATERIALS)
 // ════════════════════════════════════════════════════════════════
 const woodOptions = {
     teak: {
         name: 'Ceylon Teak',
         price: 18500,
         color: 0xc47f43,
-        roughness: 0.35,
+        tintColor: 0xdca06c,
+        roughness: 0.32,
+        clearcoat: 0.75,
+        clearcoatRoughness: 0.14,
         desc: 'Aged Ceylon timber featuring tight natural grain, weather resistance, and finished with warm organic beeswax.'
     },
     walnut: {
         name: 'Dark Walnut',
         price: 28000,
         color: 0x5a3422,
+        tintColor: 0x7a4b35,
         roughness: 0.28,
+        clearcoat: 0.82,
+        clearcoatRoughness: 0.12,
         desc: 'Deep royal chocolate brown with espresso grain streaks and a silken matte tactile feel.'
     },
     ebony: {
         name: 'Ebony Ash',
         price: 34000,
         color: 0x221f1d,
-        roughness: 0.22,
+        tintColor: 0x36322f,
+        roughness: 0.20,
+        clearcoat: 0.90,
+        clearcoatRoughness: 0.08,
         desc: 'Jet black timber with charcoal undertones, creating bold aristocratic contrast.'
     },
     mahogany: {
         name: 'Red Mahogany',
         price: 25000,
         color: 0x7c231c,
+        tintColor: 0x9b3a30,
         roughness: 0.30,
+        clearcoat: 0.85,
+        clearcoatRoughness: 0.10,
         desc: 'Rich reddish-burgundy hues that deepen with age under natural sunlight exposure.'
     },
     oak: {
         name: 'Nordic Oak',
         price: 21500,
         color: 0xd4ba96,
-        roughness: 0.40,
+        tintColor: 0xebd3b2,
+        roughness: 0.38,
+        clearcoat: 0.60,
+        clearcoatRoughness: 0.18,
         desc: 'Pale golden Scandinavian oak with open cathedral pore patterns and organic wax coat.'
     }
 };
@@ -176,49 +192,63 @@ const fabricOptions = {
     linen: {
         name: 'Oat Linen',
         price: 0,
-        color: 0xdfd4b8,
-        roughness: 0.88,
+        color: 0xded3b8,
+        roughness: 0.82,
+        sheen: 0.5,
+        sheenRoughness: 0.6,
         sheenColor: 0xffffff,
         desc: '100% organic unbleached flax weave. Breathable, hypoallergenic, and naturally durable.'
     },
     crimson_velvet: {
         name: 'Crimson Velvet',
         price: 14000,
-        color: 0x7a0c1e,
-        roughness: 0.62,
-        sheenColor: 0xcc2a45,
+        color: 0x851125,
+        roughness: 0.58,
+        sheen: 1.0,
+        sheenRoughness: 0.45,
+        sheenColor: 0xe03b55,
         desc: 'Deep royal ruby velvet with plush 400gsm pile that catches light dramatically across angles.'
     },
     emerald_velvet: {
         name: 'Emerald Velvet',
         price: 14000,
-        color: 0x0f402c,
-        roughness: 0.62,
-        sheenColor: 0x228b61,
+        color: 0x124832,
+        roughness: 0.58,
+        sheen: 1.0,
+        sheenRoughness: 0.45,
+        sheenColor: 0x2bb37d,
         desc: 'Aristocratic Ceylon forest green velvet offering luxuriant tactile depth and rich shadows.'
     },
     navy_velvet: {
         name: 'Sapphire Velvet',
         price: 14000,
-        color: 0x142b52,
-        roughness: 0.62,
-        sheenColor: 0x3b65a6,
+        color: 0x183461,
+        roughness: 0.58,
+        sheen: 1.0,
+        sheenRoughness: 0.45,
+        sheenColor: 0x487cd4,
         desc: 'Regal midnight navy hue reminiscent of Ceylon blue sapphires, treated for stain resistance.'
     },
     leather: {
         name: 'Cognac Leather',
         price: 23000,
-        color: 0x7a3d1c,
-        roughness: 0.36,
-        sheenColor: 0xb56333,
+        color: 0x804320,
+        roughness: 0.32,
+        sheen: 0.3,
+        sheenRoughness: 0.3,
+        sheenColor: 0xcc7c47,
+        clearcoat: 0.35,
+        clearcoatRoughness: 0.22,
         desc: 'Full-grain vegetable-tanned leather that develops a magnificent personalized patina.'
     },
     noir_velvet: {
         name: 'Noir Velvet',
         price: 14000,
-        color: 0x1c1c1c,
-        roughness: 0.68,
-        sheenColor: 0x4a4a4a,
+        color: 0x222222,
+        roughness: 0.65,
+        sheen: 1.0,
+        sheenRoughness: 0.5,
+        sheenColor: 0x666666,
         desc: 'Obsidian black velvet exuding modern imperial grandeur with whisper-soft pile.'
     }
 };
@@ -227,9 +257,10 @@ const trimOptions = {
     gold: {
         name: '24K Gold Leaf',
         price: 11000,
-        color: 0xd4af37,
-        metalness: 0.90,
-        roughness: 0.25,
+        color: 0xf5cf47,
+        metalness: 0.95,
+        roughness: 0.18,
+        clearcoat: 0.3,
         desc: 'Hand-applied gold leaf gilding on carved rosette accents and metallic ferrules.'
     },
     wood: {
@@ -237,15 +268,17 @@ const trimOptions = {
         price: 0,
         color: 0xb56d35,
         metalness: 0.05,
-        roughness: 0.35,
+        roughness: 0.32,
+        clearcoat: 0.7,
         desc: 'Details remain in natural solid timber, sculpted seamlessly with the chair frame.'
     },
     bronze: {
         name: 'Antique Bronze',
         price: 9500,
-        color: 0x8f6844,
-        metalness: 0.70,
-        roughness: 0.40,
+        color: 0x9e734c,
+        metalness: 0.85,
+        roughness: 0.32,
+        clearcoat: 0.2,
         desc: 'Warm patinated bronze leafing with dark antique burnish in carved recesses.'
     }
 };
@@ -388,7 +421,7 @@ export default function ChairConfigurator() {
         applyMaterialsToModel(model, chairId);
     };
 
-    // Helper: Apply active wood/fabric/trim materials to a model
+    // Helper: Apply active photorealistic wood/fabric/trim materials to a model
     const applyMaterialsToModel = (model, chairId) => {
         const wood = woodOptions[selectedWoodRef.current || 'teak'];
         const fabric = fabricOptions[selectedFabricRef.current || 'linen'];
@@ -399,33 +432,80 @@ export default function ChairConfigurator() {
                 const name = (child.name || '').toLowerCase();
                 const matName = (child.material.name || '').toLowerCase();
 
+                // Upgrade material to MeshPhysicalMaterial to unlock clearcoat varnish, sheen & realistic IBL reflection
+                if (!child.material.isMeshPhysicalMaterial) {
+                    const prevMat = child.material;
+                    child.material = new THREE.MeshPhysicalMaterial({
+                        map: prevMat.map || null,
+                        normalMap: prevMat.normalMap || null,
+                        normalScale: prevMat.normalScale ? prevMat.normalScale.clone() : new THREE.Vector2(1, 1),
+                        roughnessMap: prevMat.roughnessMap || null,
+                        metalnessMap: prevMat.metalnessMap || null,
+                        aoMap: prevMat.aoMap || null,
+                        aoMapIntensity: 1.25,
+                        color: prevMat.color ? prevMat.color.clone() : new THREE.Color(0xffffff),
+                        roughness: prevMat.roughness !== undefined ? prevMat.roughness : 0.35,
+                        metalness: prevMat.metalness !== undefined ? prevMat.metalness : 0.0,
+                        clearcoat: 0,
+                        clearcoatRoughness: 0.1,
+                        envMapIntensity: 1.3,
+                        transparent: prevMat.transparent || false,
+                        opacity: prevMat.opacity !== undefined ? prevMat.opacity : 1.0
+                    });
+                }
+
                 if (chairId === 'armchair') {
                     if (name.includes('wood') || matName.includes('wood')) {
-                        child.material.color.setHex(wood.color);
+                        // Turned timber legs / wooden supports
+                        child.material.color.setHex(wood.tintColor || wood.color);
                         child.material.roughness = wood.roughness;
+                        child.material.clearcoat = wood.clearcoat ?? 0.8;
+                        child.material.clearcoatRoughness = wood.clearcoatRoughness ?? 0.14;
+                        child.material.metalness = 0.04;
+                        child.material.envMapIntensity = 1.35;
                     } else if (name.includes('fabric') || matName.includes('fabric')) {
+                        // Bespoke tailored plush textile / velvet upholstery
                         child.material.color.setHex(fabric.color);
                         child.material.roughness = fabric.roughness;
-                        if (child.material.sheenColor) {
-                            child.material.sheenColor.setHex(fabric.sheenColor || fabric.color);
-                        }
+                        child.material.metalness = 0.0;
+                        child.material.sheen = fabric.sheen ?? 1.0;
+                        child.material.sheenRoughness = fabric.sheenRoughness ?? 0.45;
+                        child.material.sheenColor = new THREE.Color(fabric.sheenColor || fabric.color);
+                        child.material.clearcoat = fabric.clearcoat ?? 0;
+                        child.material.clearcoatRoughness = fabric.clearcoatRoughness ?? 0.2;
+                        child.material.envMapIntensity = 1.1;
                     } else if (name.includes('metal') || matName.includes('metal')) {
+                        // 24K Gold Leaf / Patinated Bronze Ferrules
                         child.material.color.setHex(trim.color);
                         child.material.metalness = trim.metalness;
                         child.material.roughness = trim.roughness;
+                        child.material.clearcoat = trim.clearcoat ?? 0.35;
+                        child.material.clearcoatRoughness = 0.08;
+                        child.material.envMapIntensity = 1.6;
                     }
                 } else if (chairId === 'lounge') {
                     if (name.includes('cushion') || matName.includes('fabric') || matName.includes('cushion')) {
                         child.material.color.setHex(fabric.color);
                         child.material.roughness = fabric.roughness;
+                        child.material.sheen = fabric.sheen ?? 0.85;
+                        child.material.sheenRoughness = fabric.sheenRoughness ?? 0.45;
+                        child.material.sheenColor = new THREE.Color(fabric.sheenColor || fabric.color);
                     } else {
-                        child.material.color.setHex(wood.color);
+                        child.material.color.setHex(wood.tintColor || wood.color);
                         child.material.roughness = wood.roughness;
+                        child.material.clearcoat = wood.clearcoat ?? 0.78;
+                        child.material.clearcoatRoughness = wood.clearcoatRoughness ?? 0.14;
+                        child.material.metalness = 0.03;
+                        child.material.envMapIntensity = 1.3;
                     }
                 } else {
-                    // Solid Timber Chairs
-                    child.material.color.setHex(wood.color);
+                    // Solid Timber Heritage Chairs (Ceylon Teak Dining, Heritage Rocker, Royal Carved Throne)
+                    child.material.color.setHex(wood.tintColor || wood.color);
                     child.material.roughness = wood.roughness;
+                    child.material.clearcoat = wood.clearcoat ?? 0.78;
+                    child.material.clearcoatRoughness = wood.clearcoatRoughness ?? 0.14;
+                    child.material.metalness = 0.03;
+                    child.material.envMapIntensity = 1.35;
                 }
                 child.material.needsUpdate = true;
             }
@@ -477,10 +557,20 @@ export default function ChairConfigurator() {
                 loadedModels[chairId] = model;
                 setIsModelLoading(false);
             },
-            undefined,
+            (xhr) => {
+                if (xhr.lengthComputable && xhr.total > 0) {
+                    const percent = Math.min(100, Math.round((xhr.loaded / xhr.total) * 100));
+                    setLoadingLabel(`Loading 3D PBR Asset: ${percent}%...`);
+                }
+            },
             (err) => {
                 console.warn(`GLTF load notice for ${chairId}:`, err);
-                setIsModelLoading(false);
+                if (chairId !== 'dining' && !loadedModels['dining']) {
+                    console.log('Falling back to Ceylon Heritage Dining Chair...');
+                    switchChairModel('dining');
+                } else {
+                    setIsModelLoading(false);
+                }
             }
         );
     };
@@ -500,14 +590,22 @@ export default function ChairConfigurator() {
         const camera = new THREE.PerspectiveCamera(38, width / height, 0.1, 1000);
         camera.position.set(42, 45, 65);
 
-        // Renderer
+        // Photorealistic WebGL Renderer
         const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, preserveDrawingBuffer: true });
         renderer.setSize(width, height);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
         renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 1.25;
+        renderer.toneMappingExposure = 1.15;
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+        // Generate High-End Studio IBL (Image-Based Lighting) Environment Map
+        const pmremGenerator = new THREE.PMREMGenerator(renderer);
+        pmremGenerator.compileEquirectangularShader();
+        const roomEnvironment = new RoomEnvironment();
+        const envTexture = pmremGenerator.fromScene(roomEnvironment).texture;
+        scene.environment = envTexture;
 
         // OrbitControls
         const controls = new OrbitControls(camera, canvas);
@@ -518,19 +616,26 @@ export default function ChairConfigurator() {
         controls.maxDistance = 120;
         controls.target.set(0, 22, 0);
         controls.autoRotate = true;
-        controls.autoRotateSpeed = 0.9;
+        controls.autoRotateSpeed = 0.8;
 
         // Cinematic 3-Point Studio Lighting (Defaults to Golden Hour)
         const mood = lightingMoods.golden;
-        const ambientLight = new THREE.AmbientLight(mood.ambientColor, mood.ambientIntensity);
+        const ambientLight = new THREE.AmbientLight(mood.ambientColor, mood.ambientIntensity * 0.75);
         scene.add(ambientLight);
 
         const keyLight = new THREE.DirectionalLight(mood.keyColor, mood.keyIntensity);
         keyLight.position.set(40, 75, 45);
         keyLight.castShadow = true;
-        keyLight.shadow.mapSize.width = 1024;
-        keyLight.shadow.mapSize.height = 1024;
-        keyLight.shadow.bias = -0.0001;
+        keyLight.shadow.mapSize.width = 2048;
+        keyLight.shadow.mapSize.height = 2048;
+        keyLight.shadow.camera.near = 10;
+        keyLight.shadow.camera.far = 180;
+        keyLight.shadow.camera.left = -35;
+        keyLight.shadow.camera.right = 35;
+        keyLight.shadow.camera.top = 35;
+        keyLight.shadow.camera.bottom = -35;
+        keyLight.shadow.bias = -0.00015;
+        keyLight.shadow.normalBias = 0.02; // Prevents shadow acne on curved timber geometry
         scene.add(keyLight);
 
         const fillLight = new THREE.DirectionalLight(mood.fillColor, mood.fillIntensity);
@@ -546,7 +651,7 @@ export default function ChairConfigurator() {
         scene.add(floorBounce);
 
         // Studio Floor shadow receiver
-        const floorGeo = new THREE.CircleGeometry(38, 48);
+        const floorGeo = new THREE.PlaneGeometry(140, 140);
         const floorMat = new THREE.ShadowMaterial({ opacity: 0.42 });
         const floor = new THREE.Mesh(floorGeo, floorMat);
         floor.rotation.x = -Math.PI / 2;
@@ -612,6 +717,9 @@ export default function ChairConfigurator() {
             }
             controls.dispose();
             renderer.dispose();
+            pmremGenerator.dispose();
+            roomEnvironment.dispose();
+            envTexture.dispose();
         };
     }, []);
 
@@ -627,7 +735,7 @@ export default function ChairConfigurator() {
         if (lights) {
             if (lights.ambientLight) {
                 lights.ambientLight.color.setHex(mood.ambientColor);
-                lights.ambientLight.intensity = mood.ambientIntensity;
+                lights.ambientLight.intensity = mood.ambientIntensity * 0.75;
             }
             if (lights.keyLight) {
                 lights.keyLight.color.setHex(mood.keyColor);
